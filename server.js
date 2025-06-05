@@ -222,6 +222,35 @@ app.get('/api/auth/session', (req, res) => {
   res.json({ success: true, data: null });
 });
 
+// Database setup endpoint (for easier initialization)
+app.post('/api/setup-database', async (req, res) => {
+  try {
+    console.log('🔧 Manual database setup requested...');
+    const result = await SupabaseBackendService.initializeDatabase();
+    
+    if (result.success) {
+      res.json({ 
+        success: true, 
+        message: 'Database setup completed successfully',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.error,
+        message: 'Database setup failed'
+      });
+    }
+  } catch (error) {
+    console.error('Setup endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Database setup failed'
+    });
+  }
+});
+
 // Health check endpoint for deployment platforms
 app.get('/health', (req, res) => {
   res.status(200).json({

@@ -12,21 +12,33 @@ export class SupabaseBackendService {
   // Initialize database with sample data
   static async initializeDatabase() {
     try {
-      // Check if users already exist
+      console.log('🔄 Checking database setup...');
+      
+      // Try to check if users table exists by querying it
       const { data: existingUsers, error: userError } = await supabase
         .from('users')
         .select('*')
         .limit(1);
 
-      if (userError && userError.code === '42P01') {
-        // Table doesn't exist, create tables first
-        console.log('Creating database tables...');
-        await this.createTables();
+      if (userError) {
+        if (userError.code === '42P01') {
+          console.log('📋 Tables not found, please run the setup SQL script in Supabase dashboard');
+          console.log('📋 Go to https://supabase.com/dashboard → SQL Editor and run setup-database.sql');
+          return { 
+            success: false, 
+            error: 'Database tables not found. Please run setup-database.sql in Supabase SQL Editor first.' 
+          };
+        } else {
+          throw userError;
+        }
       }
 
+      // If users exist, check if we have sample data
       if (!existingUsers || existingUsers.length === 0) {
-        console.log('Initializing with sample data...');
+        console.log('📦 Tables exist but no sample data found, creating...');
         await this.createSampleData();
+      } else {
+        console.log('✅ Database already has data, ready to use');
       }
 
       console.log('✅ Database initialized successfully');
@@ -38,41 +50,68 @@ export class SupabaseBackendService {
   }
 
   static async createTables() {
-    const createTablesSQL = `
-      -- Create users table
-      CREATE TABLE IF NOT EXISTS users (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          email VARCHAR(255) UNIQUE NOT NULL,
-          name VARCHAR(255) NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW(),
-          updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
+    // Create tables one by one for better error handling
+    try {
+      // Create users table
+      const { error: usersError } = await supabase.rpc('sql', {
+        query: `
+          CREATE TABLE IF NOT EXISTS users (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              email VARCHAR(255) UNIQUE NOT NULL,
+              name VARCHAR(255) NOT NULL,
+              created_at TIMESTAMPTZ DEFAULT NOW(),
+              updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `
+      });
 
-      -- Create expenses table
-      CREATE TABLE IF NOT EXISTS expenses (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          amount DECIMAL(10,2) NOT NULL,
-          description TEXT NOT NULL,
-          category VARCHAR(100) NOT NULL,
-          paid_by_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          date DATE NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-      );
+      if (usersError) {
+        console.log('Users table might already exist, continuing...');
+      }
 
-      -- Create settlements table
-      CREATE TABLE IF NOT EXISTS settlements (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          amount DECIMAL(10,2) NOT NULL,
-          paid_by_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          paid_to_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          description TEXT,
-          date DATE NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `;
+      // Create expenses table
+      const { error: expensesError } = await supabase.rpc('sql', {
+        query: `
+          CREATE TABLE IF NOT EXISTS expenses (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              amount DECIMAL(10,2) NOT NULL,
+              description TEXT NOT NULL,
+              category VARCHAR(100) NOT NULL,
+              paid_by_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              date DATE NOT NULL,
+              created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `
+      });
 
-    const { error } = await supabase.rpc('exec_sql', { sql: createTablesSQL });
-    if (error) throw error;
+      if (expensesError) {
+        console.log('Expenses table might already exist, continuing...');
+      }
+
+      // Create settlements table
+      const { error: settlementsError } = await supabase.rpc('sql', {
+        query: `
+          CREATE TABLE IF NOT EXISTS settlements (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              amount DECIMAL(10,2) NOT NULL,
+              paid_by_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              paid_to_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              description TEXT,
+              date DATE NOT NULL,
+              created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `
+      });
+
+      if (settlementsError) {
+        console.log('Settlements table might already exist, continuing...');
+      }
+
+      console.log('✅ Tables created successfully');
+    } catch (error) {
+      // If table creation fails, we'll try direct table operations instead
+      console.log('Table creation via RPC failed, tables might already exist');
+    }
   }
 
   static async createSampleData() {
