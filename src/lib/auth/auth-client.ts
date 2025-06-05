@@ -1,13 +1,10 @@
 import type { SignInCredentials, User, Session } from '../../types/auth';
-
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? window.location.origin 
-  : 'http://localhost:8080';
+import { config } from '../config';
 
 export class AuthClient {
   private baseURL: string;
 
-  constructor(baseURL: string = API_BASE) {
+  constructor(baseURL: string = config.apiBaseUrl) {
     this.baseURL = baseURL;
   }
 

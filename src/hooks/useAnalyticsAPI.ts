@@ -1,6 +1,7 @@
 // React hooks for fetching analytics data from API endpoints
 
 import { useQuery } from '@tanstack/react-query';
+import { config } from '@/lib/config';
 import type {
   AnalyticsFilters,
   MonthlyData,
@@ -11,7 +12,7 @@ import type {
   AnalyticsResponse
 } from '../types/analytics';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://138.197.8.183:3001';
+const API_BASE_URL = config.apiBaseUrl;
 
 // Fetch monthly analytics data
 export function useMonthlyAnalytics(filters?: AnalyticsFilters) {

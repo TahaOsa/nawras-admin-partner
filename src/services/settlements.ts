@@ -28,7 +28,7 @@ export async function fetchSettlements(filters?: { paidBy?: string; paidTo?: str
     params.append('limit', filters.limit.toString());
   }
 
-  const url = `${API_BASE_URL}/settlements${params.toString() ? `?${params.toString()}` : ''}`;
+  const url = `${API_BASE_URL}/api/settlements${params.toString() ? `?${params.toString()}` : ''}`;
 
   const response = await fetch(url);
 
@@ -49,7 +49,7 @@ export async function fetchSettlements(filters?: { paidBy?: string; paidTo?: str
  * Fetch a single settlement by ID
  */
 export async function fetchSettlementById(id: number): Promise<Settlement> {
-  const response = await fetch(`${API_BASE_URL}/settlements/${id}`);
+  const response = await fetch(`${API_BASE_URL}/api/settlements/${id}`);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch settlement: ${response.status} ${response.statusText}`);
@@ -68,7 +68,7 @@ export async function fetchSettlementById(id: number): Promise<Settlement> {
  * Create a new settlement
  */
 export async function createSettlement(settlement: CreateSettlementRequest): Promise<Settlement> {
-  const response = await fetch(`${API_BASE_URL}/settlements`, {
+  const response = await fetch(`${API_BASE_URL}/api/settlements`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
