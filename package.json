@@ -1,6 +1,6 @@
 {
   "name": "nawras-admin-partner",
-  "version": "8.0.0",
+  "version": "9.0.0",
   "description": "Nawras Admin Partner - Expense Tracking System",
   "main": "server.js",
   "scripts": {
