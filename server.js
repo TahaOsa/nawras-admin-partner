@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { SupabaseBackendService } from './src/lib/supabase-backend.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,19 +17,20 @@ app.use(express.json());
 // Serve static files from the React app build directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Sample data for demonstration
-const expenses = [
-  { id: 1, amount: 25.50, description: "Lunch", category: "Food", paidById: "taha", date: "2024-01-15" },
-  { id: 2, amount: 60.99, description: "Groceries", category: "Food", paidById: "burak", date: "2024-01-16" },
-  { id: 3, amount: 15.75, description: "Coffee", category: "Food", paidById: "taha", date: "2024-01-17" },
-  { id: 4, amount: 120.00, description: "Utilities", category: "Bills", paidById: "burak", date: "2024-01-18" },
-  { id: 5, amount: 45.30, description: "Gas", category: "Transportation", paidById: "taha", date: "2024-01-19" }
-];
-
-const settlements = [
-  { id: 1, amount: 30.00, paidBy: "taha", paidTo: "burak", description: "Settlement for groceries", date: "2024-01-17" },
-  { id: 2, amount: 15.00, paidBy: "burak", paidTo: "taha", description: "Coffee reimbursement", date: "2024-01-18" }
-];
+// Initialize database on startup
+let isDbInitialized = false;
+const initializeDb = async () => {
+  if (!isDbInitialized) {
+    console.log('🔄 Initializing Supabase database...');
+    const result = await SupabaseBackendService.initializeDatabase();
+    isDbInitialized = result.success;
+    if (result.success) {
+      console.log('✅ Supabase database ready');
+    } else {
+      console.error('❌ Database initialization failed:', result.error);
+    }
+  }
+};
 
 // API Routes
 app.get('/api/health', (req, res) => {
@@ -41,13 +43,31 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/expenses', (req, res) => {
-  res.json({ 
-    success: true, 
-    data: expenses, 
-    total: expenses.length,
-    totalAmount: expenses.reduce((sum, expense) => sum + expense.amount, 0)
-  });
+app.get('/api/expenses', async (req, res) => {
+  try {
+    await initializeDb();
+    const expenses = await SupabaseBackendService.getExpenses();
+    
+    // Convert to legacy format for frontend compatibility
+    const legacyExpenses = expenses.map(expense => ({
+      id: expense.id,
+      amount: parseFloat(expense.amount),
+      description: expense.description,
+      category: expense.category,
+      paidById: expense.paid_by_id,
+      date: expense.date
+    }));
+    
+    res.json({ 
+      success: true, 
+      data: legacyExpenses, 
+      total: legacyExpenses.length,
+      totalAmount: legacyExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+    });
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.get('/api/expenses/:id', (req, res) => {
@@ -61,24 +81,41 @@ app.get('/api/expenses/:id', (req, res) => {
   res.json({ success: true, data: expense });
 });
 
-app.post('/api/expenses', (req, res) => {
-  const { amount, description, category, paidById } = req.body;
-  
-  if (!amount || !description || !paidById) {
-    return res.status(400).json({ success: false, error: 'Missing required fields' });
+app.post('/api/expenses', async (req, res) => {
+  try {
+    const { amount, description, category, paidById } = req.body;
+    
+    if (!amount || !description || !paidById) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    await initializeDb();
+    
+    const newExpense = {
+      amount: parseFloat(amount),
+      description,
+      category: category || 'Other',
+      paid_by_id: paidById,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    const createdExpense = await SupabaseBackendService.createExpense(newExpense);
+    
+    // Convert to legacy format
+    const legacyExpense = {
+      id: createdExpense.id,
+      amount: parseFloat(createdExpense.amount),
+      description: createdExpense.description,
+      category: createdExpense.category,
+      paidById: createdExpense.paid_by_id,
+      date: createdExpense.date
+    };
+    
+    res.json({ success: true, data: legacyExpense });
+  } catch (error) {
+    console.error('Error creating expense:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
-  
-  const newExpense = {
-    id: expenses.length + 1,
-    amount: parseFloat(amount),
-    description,
-    category: category || 'Other',
-    paidById,
-    date: new Date().toISOString().split('T')[0]
-  };
-  
-  expenses.push(newExpense);
-  res.json({ success: true, data: newExpense });
 });
 
 app.put('/api/expenses/:id', (req, res) => {
