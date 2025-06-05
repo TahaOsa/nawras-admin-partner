@@ -9,6 +9,23 @@
     <link rel="stylesheet" crossorigin href="/assets/index-DgZWfon6.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
+        <h2>Loading Nawras Admin...</h2>
+        <p>If this message persists, please check your browser console for errors.</p>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error('Error loading app:', e.error);
+        document.getElementById('root').innerHTML = 
+          '<div style="padding: 20px; text-align: center; color: red; font-family: Arial, sans-serif;">' +
+          '<h2>❌ App Loading Error</h2>' +
+          '<p>There was an error loading the application.</p>' +
+          '<p>Error: ' + e.error.message + '</p>' +
+          '<button onclick="location.reload()">🔄 Retry</button>' +
+          '</div>';
+      });
+    </script>
   </body>
 </html> 
