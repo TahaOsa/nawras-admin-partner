@@ -2,29 +2,59 @@
   "name": "nawras-admin-partner",
   "version": "11.0.0",
   "description": "Nawras Admin Partner - Expense Tracking System",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "build": "echo 'Build completed successfully'",
-    "dev": "nodemon server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.21.2",
-    "cors": "^2.8.5",
+    "@tanstack/react-query": "^5.0.0",
+    "bcryptjs": "^2.4.3",
+    "clsx": "^2.0.0",
     "cookie-parser": "^1.4.6",
-    "bcryptjs": "^2.4.3"
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "express": "^4.21.2",
+    "lucide-react": "^0.400.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.15.3",
+    "wouter": "^3.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "autoprefixer": "^10.4.0",
+    "nodemon": "^3.0.1",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["expense-tracker", "nodejs", "express", "digitalocean"],
+  "keywords": [
+    "expense-tracker",
+    "react",
+    "typescript",
+    "vite",
+    "express",
+    "digitalocean"
+  ],
   "author": "Nawras Admin",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nawras-admin/nawras-admin-partner.git"
-  }
+    "url": "git+https://github.com/nawras-admin/nawras-admin-partner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nawras-admin/nawras-admin-partner/issues"
+  },
+  "homepage": "https://github.com/nawras-admin/nawras-admin-partner#readme"
 }

@@ -1,7 +1,5 @@
-
 import React from 'react';
 import { Route, Switch } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Auth components - temporarily disabled for build
 // import { AuthProvider, ProtectedRoute } from './components/auth';
@@ -18,23 +16,6 @@ import SettlementPage from './pages/settlement';
 import HistoryPage from './pages/history';
 import ReportsPage from './pages/reports';
 import SettingsPage from './pages/settings';
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: false,
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    },
-    mutations: {
-      retry: 1,
-      retryDelay: 1000,
-    },
-  },
-});
 
 const AppContent: React.FC = () => {
   return (
@@ -71,11 +52,7 @@ const AppContent: React.FC = () => {
 };
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
-  );
+  return <AppContent />;
 }
 
 export default App

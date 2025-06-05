@@ -1,7 +1,8 @@
 // Application configuration management
 export const config = {
   // API Configuration
-  apiBaseUrl: (import.meta.env.VITE_API_BASE_URL || 'http://138.197.8.183:3001') + '/api',
+  apiBaseUrl: (import.meta.env.VITE_API_BASE_URL || 
+    (import.meta.env.PROD ? window.location.origin : 'http://localhost:3001')) + '/api',
 
   // App Information
   appName: import.meta.env.VITE_APP_NAME || 'Nawras Admin',
