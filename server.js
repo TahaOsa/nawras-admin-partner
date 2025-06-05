@@ -143,6 +143,48 @@ app.post('/api/settlements', (req, res) => {
   res.json({ success: true, data: newSettlement });
 });
 
+// Auth endpoints (simple mock implementation)
+app.post('/api/auth/sign-in', (req, res) => {
+  const { email, password } = req.body;
+  
+  // Simple mock authentication
+  const validUsers = {
+    'taha@nawrasinchina.com': { password: 'taha2024', name: 'Taha', id: 'taha' },
+    'burak@nawrasinchina.com': { password: 'burak2024', name: 'Burak', id: 'burak' }
+  };
+  
+  const user = validUsers[email];
+  if (!user || user.password !== password) {
+    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  }
+  
+  const session = {
+    id: `session_${Date.now()}`,
+    userId: user.id,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    user: {
+      id: user.id,
+      email,
+      name: user.name,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  };
+  
+  res.json({ success: true, data: { user: session.user, session } });
+});
+
+app.post('/api/auth/sign-out', (req, res) => {
+  res.json({ success: true, message: 'Signed out successfully' });
+});
+
+app.get('/api/auth/session', (req, res) => {
+  // For demo purposes, return null (no active session)
+  // In real app, this would check session tokens/cookies
+  res.json({ success: true, data: null });
+});
+
 // Health check endpoint for deployment platforms
 app.get('/health', (req, res) => {
   res.status(200).json({

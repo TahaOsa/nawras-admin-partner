@@ -1,8 +1,8 @@
 import type { SignInCredentials, User, Session } from '../../types/auth';
 
 const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://partner.nawrasinchina.com' 
-  : 'http://localhost:3001';
+  ? window.location.origin 
+  : 'http://localhost:8080';
 
 export class AuthClient {
   private baseURL: string;
