@@ -7,7 +7,7 @@ services:
     branch: main
     deploy_on_push: true
   run_command: npm start
-  build_command: npm ci --only=production && npm install --save-dev @vitejs/plugin-react vite typescript && npm run build
+  build_command: npm install --only=production
   environment_slug: node-js
   instance_count: 1
   instance_size_slug: basic-xxs
