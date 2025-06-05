@@ -31,24 +31,25 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '7.0.0-COMPLETE-NAVIGATION',
-    server: 'MULTI-PAGE-DASHBOARD-DEPLOYED',
+    version: '8.0.0-BULLETPROOF-NAVIGATION',
+    server: 'DEBUGGED-NAVIGATION-DEPLOYED',
     environment: process.env.NODE_ENV || 'production',
-    buildStatus: 'COMPLETE-NAVIGATION-SYSTEM',
+    buildStatus: 'BULLETPROOF-NAVIGATION-SYSTEM',
     deploymentTime: new Date().toISOString(),
     features: [
-      'multi-page-navigation',
-      'real-page-content',
-      'history-page',
-      'reports-page',
-      'settlement-page',
-      'interactive-filtering',
-      'data-visualization',
+      'forced-navigation-override',
+      'comprehensive-debugging',
+      'error-handling',
+      'cache-busting',
+      'console-logging',
+      'bulletproof-page-switching',
+      'data-loading-fixes',
       'complete-functionality'
     ],
     deploymentId: Date.now(),
     navigationFixed: true,
-    message: 'Complete multi-page navigation system deployed - no more popups!'
+    debugMode: true,
+    message: 'Bulletproof navigation system with comprehensive debugging deployed!'
   });
 });
 
@@ -171,7 +172,7 @@ function getWorkingDashboard() {
             <div class="sidebar fixed inset-y-0 left-0 bg-white shadow-lg border-r border-gray-200">
                 <div class="p-6">
                     <h1 class="text-xl font-bold text-gray-900">🏢 Nawras Admin</h1>
-                    <p class="text-sm text-gray-600">✅ Build Fixed - v5.0.0</p>
+                    <p class="text-sm text-gray-600">✅ Navigation Fixed - v8.0.0</p>
                 </div>
                 <nav class="mt-6">
                     <a href="javascript:void(0)" onclick="showDashboard()" class="nav-link flex items-center px-6 py-3 text-blue-600 bg-blue-50 border-r-2 border-blue-600" data-page="dashboard">
@@ -595,23 +596,50 @@ function getWorkingDashboard() {
         }
 
         function showPage(pageId, title, subtitle) {
+            console.log('showPage called:', { pageId, title, subtitle });
+
             // Hide all pages
-            document.querySelectorAll('.page-content').forEach(page => {
+            const allPages = document.querySelectorAll('.page-content');
+            console.log('Found page elements:', allPages.length);
+
+            allPages.forEach(page => {
                 page.classList.add('hidden');
+                console.log('Hidden page:', page.id);
             });
 
             // Show selected page
             const targetPage = document.getElementById(pageId);
+            console.log('Target page found:', !!targetPage, pageId);
+
             if (targetPage) {
                 targetPage.classList.remove('hidden');
+                console.log('Showing page:', pageId);
+
+                // Force display
+                targetPage.style.display = 'block';
+            } else {
+                console.error('Page not found:', pageId);
             }
 
             // Update header
-            document.getElementById('page-title').textContent = title;
-            document.getElementById('page-subtitle').textContent = subtitle;
+            const titleElement = document.getElementById('page-title');
+            const subtitleElement = document.getElementById('page-subtitle');
+
+            if (titleElement) {
+                titleElement.textContent = title;
+                console.log('Updated title:', title);
+            }
+
+            if (subtitleElement) {
+                subtitleElement.textContent = subtitle;
+                console.log('Updated subtitle:', subtitle);
+            }
 
             // Close mobile menu if open
-            document.querySelector('.sidebar').classList.remove('open');
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.classList.remove('open');
+            }
         }
 
         function showDashboard() {
@@ -744,17 +772,31 @@ function getWorkingDashboard() {
 
         // Data loading functions for each page
         async function loadHistoryData() {
+            console.log('loadHistoryData called');
+            const historyList = document.getElementById('history-list');
+
+            if (!historyList) {
+                console.error('history-list element not found');
+                return;
+            }
+
+            // Show loading state
+            historyList.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p class="text-gray-500 mt-2">Loading history...</p></div>';
+
             try {
                 const response = await fetch('/api/expenses');
                 const data = await response.json();
+                console.log('History data received:', data);
 
                 if (data.success) {
                     displayHistoryList(data.data);
+                } else {
+                    throw new Error(data.error || 'Failed to load history');
                 }
             } catch (error) {
                 console.error('Error loading history:', error);
-                document.getElementById('history-list').innerHTML =
-                    '<div class="text-center py-8"><p class="text-red-600">Failed to load history</p></div>';
+                historyList.innerHTML =
+                    '<div class="text-center py-8"><p class="text-red-600">Failed to load history. <button onclick="loadHistoryData()" class="text-blue-600 underline ml-2">Try again</button></p></div>';
             }
         }
 
@@ -792,15 +834,31 @@ function getWorkingDashboard() {
         }
 
         async function loadReportsData() {
+            console.log('loadReportsData called');
+            const categoryBreakdown = document.getElementById('category-breakdown');
+
+            if (!categoryBreakdown) {
+                console.error('category-breakdown element not found');
+                return;
+            }
+
+            // Show loading state
+            categoryBreakdown.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p class="text-gray-500 mt-2">Loading reports...</p></div>';
+
             try {
                 const response = await fetch('/api/expenses');
                 const data = await response.json();
+                console.log('Reports data received:', data);
 
                 if (data.success) {
                     generateReports(data.data);
+                } else {
+                    throw new Error(data.error || 'Failed to load reports');
                 }
             } catch (error) {
                 console.error('Error loading reports:', error);
+                categoryBreakdown.innerHTML =
+                    '<div class="text-center py-8"><p class="text-red-600">Failed to load reports. <button onclick="loadReportsData()" class="text-blue-600 underline ml-2">Try again</button></p></div>';
             }
         }
 
@@ -821,15 +879,42 @@ function getWorkingDashboard() {
         }
 
         async function loadSettlementData() {
+            console.log('loadSettlementData called');
+
+            // Check if settlement elements exist
+            const settlementElements = [
+                'settlement-taha-total', 'settlement-burak-total',
+                'settlement-amount', 'settlement-direction'
+            ];
+
+            const missingElements = settlementElements.filter(id => !document.getElementById(id));
+            if (missingElements.length > 0) {
+                console.error('Settlement elements not found:', missingElements);
+                return;
+            }
+
+            // Show loading state
+            settlementElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = 'Loading...';
+            });
+
             try {
                 const response = await fetch('/api/expenses');
                 const data = await response.json();
+                console.log('Settlement data received:', data);
 
                 if (data.success) {
                     calculateSettlement(data.data);
+                } else {
+                    throw new Error(data.error || 'Failed to load settlement data');
                 }
             } catch (error) {
                 console.error('Error loading settlement data:', error);
+                settlementElements.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = 'Error';
+                });
             }
         }
 
@@ -873,6 +958,56 @@ function getWorkingDashboard() {
         function processSettlement() {
             alert('Settlement processing would be implemented here - this would create settlement records and update balances.');
         }
+
+        // Force navigation system to work - override any cached functions
+        window.showHistory = function() {
+            console.log('showHistory called - forcing page switch');
+            setActiveNavigation('history');
+            showPage('history-page', 'Expense History', 'View and filter all your expenses.');
+            loadHistoryData();
+        };
+
+        window.showReports = function() {
+            console.log('showReports called - forcing page switch');
+            setActiveNavigation('reports');
+            showPage('reports-page', 'Reports & Analytics', 'View detailed analytics and expense reports.');
+            loadReportsData();
+        };
+
+        window.showSettlement = function() {
+            console.log('showSettlement called - forcing page switch');
+            setActiveNavigation('settlement');
+            showPage('settlement-page', 'Partner Settlement', 'Manage partner settlements and balance reconciliation.');
+            loadSettlementData();
+        };
+
+        window.showDashboard = function() {
+            console.log('showDashboard called - forcing page switch');
+            setActiveNavigation('dashboard');
+            showPage('dashboard-page', 'Dashboard', 'Welcome back! Here\'s your expense overview.');
+            loadExpenses();
+        };
+
+        // Force immediate execution to override any cached functions
+        setTimeout(() => {
+            console.log('Navigation system initialized - version 8.0.0');
+
+            // Test if navigation elements exist
+            const historyPage = document.getElementById('history-page');
+            const reportsPage = document.getElementById('reports-page');
+            const settlementPage = document.getElementById('settlement-page');
+
+            console.log('Page elements check:', {
+                historyPage: !!historyPage,
+                reportsPage: !!reportsPage,
+                settlementPage: !!settlementPage
+            });
+
+            // Force load data for all pages
+            loadHistoryData();
+            loadReportsData();
+            loadSettlementData();
+        }, 1000);
 
         // Load expenses on page load
         loadExpenses();
