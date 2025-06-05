@@ -15,9 +15,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: true,
+    minify: 'esbuild',
     target: 'es2020',
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
   },
 
   // Development server configuration
