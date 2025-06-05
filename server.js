@@ -2,13 +2,18 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { SupabaseBackendService } from './src/lib/supabase-backend.js';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Supabase client
+const supabaseUrl = 'https://khsdtnhjvgucpgybadki.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtoc2R0bmhqdmd1Y3BneWJhZGtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODY3NTUsImV4cCI6MjA2NDU2Mjc1NX0.iAp-OtmHThl9v0y42Gt9y-FdKQKucocRx874_LmIwuU';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Middleware
 app.use(cors());
@@ -17,271 +22,260 @@ app.use(express.json());
 // Serve static files from the React app build directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Initialize database on startup
-let isDbInitialized = false;
-const initializeDb = async () => {
-  if (!isDbInitialized) {
-    console.log('🔄 Initializing Supabase database...');
-    const result = await SupabaseBackendService.initializeDatabase();
-    isDbInitialized = result.success;
-    if (result.success) {
-      console.log('✅ Supabase database ready');
-    } else {
-      console.error('❌ Database initialization failed:', result.error);
-    }
-  }
-};
-
-// API Routes
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
+  res.json({ 
+    status: 'ok', 
     timestamp: new Date().toISOString(),
-    version: '11.0.0',
-    server: 'clean-api-server',
-    environment: process.env.NODE_ENV || 'production'
+    message: 'Nawras Admin Partner API - Connected to Supabase',
+    database: 'Connected'
   });
 });
 
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('nawras_users')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get all expenses with user information
 app.get('/api/expenses', async (req, res) => {
   try {
-    await initializeDb();
-    const expenses = await SupabaseBackendService.getExpenses();
+    const { data, error } = await supabase
+      .from('nawras_expenses')
+      .select(`
+        *,
+        paid_by:nawras_users!nawras_expenses_paid_by_id_fkey(*)
+      `)
+      .order('created_at', { ascending: false });
     
-    // Convert to legacy format for frontend compatibility
-    const legacyExpenses = expenses.map(expense => ({
-      id: expense.id,
-      amount: parseFloat(expense.amount),
-      description: expense.description,
-      category: expense.category,
-      paidById: expense.paid_by_id,
-      date: expense.date
-    }));
-    
-    res.json({ 
-      success: true, 
-      data: legacyExpenses, 
-      total: legacyExpenses.length,
-      totalAmount: legacyExpenses.reduce((sum, expense) => sum + expense.amount, 0)
-    });
+    if (error) throw error;
+    res.json(data || []);
   } catch (error) {
     console.error('Error fetching expenses:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: 'Failed to fetch expenses' });
   }
 });
 
-app.get('/api/expenses/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const expense = expenses.find(e => e.id === id);
-  
-  if (!expense) {
-    return res.status(404).json({ success: false, error: 'Expense not found' });
-  }
-  
-  res.json({ success: true, data: expense });
-});
-
+// Create new expense
 app.post('/api/expenses', async (req, res) => {
   try {
-    const { amount, description, category, paidById } = req.body;
+    const { amount, category, description, paid_by_id, date } = req.body;
     
-    if (!amount || !description || !paidById) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-
-    await initializeDb();
+    const { data, error } = await supabase
+      .from('nawras_expenses')
+      .insert({
+        amount,
+        category,
+        description,
+        paid_by_id,
+        date
+      })
+      .select(`
+        *,
+        paid_by:nawras_users!nawras_expenses_paid_by_id_fkey(*)
+      `)
+      .single();
     
-    const newExpense = {
-      amount: parseFloat(amount),
-      description,
-      category: category || 'Other',
-      paid_by_id: paidById,
-      date: new Date().toISOString().split('T')[0]
-    };
-    
-    const createdExpense = await SupabaseBackendService.createExpense(newExpense);
-    
-    // Convert to legacy format
-    const legacyExpense = {
-      id: createdExpense.id,
-      amount: parseFloat(createdExpense.amount),
-      description: createdExpense.description,
-      category: createdExpense.category,
-      paidById: createdExpense.paid_by_id,
-      date: createdExpense.date
-    };
-    
-    res.json({ success: true, data: legacyExpense });
+    if (error) throw error;
+    res.status(201).json(data);
   } catch (error) {
     console.error('Error creating expense:', error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ error: 'Failed to create expense' });
   }
 });
 
-app.put('/api/expenses/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const expenseIndex = expenses.findIndex(e => e.id === id);
-  
-  if (expenseIndex === -1) {
-    return res.status(404).json({ success: false, error: 'Expense not found' });
-  }
-  
-  const { amount, description, category, paidById } = req.body;
-  
-  expenses[expenseIndex] = {
-    ...expenses[expenseIndex],
-    amount: amount ? parseFloat(amount) : expenses[expenseIndex].amount,
-    description: description || expenses[expenseIndex].description,
-    category: category || expenses[expenseIndex].category,
-    paidById: paidById || expenses[expenseIndex].paidById
-  };
-  
-  res.json({ success: true, data: expenses[expenseIndex] });
-});
-
-app.delete('/api/expenses/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const expenseIndex = expenses.findIndex(e => e.id === id);
-  
-  if (expenseIndex === -1) {
-    return res.status(404).json({ success: false, error: 'Expense not found' });
-  }
-  
-  expenses.splice(expenseIndex, 1);
-  res.json({ success: true, message: 'Expense deleted' });
-});
-
-app.get('/api/settlements', (req, res) => {
-  res.json({ 
-    success: true, 
-    data: settlements, 
-    total: settlements.length,
-    totalAmount: settlements.reduce((sum, settlement) => sum + settlement.amount, 0)
-  });
-});
-
-app.post('/api/settlements', (req, res) => {
-  const { amount, paidBy, paidTo, description } = req.body;
-  
-  if (!amount || !paidBy || !paidTo) {
-    return res.status(400).json({ success: false, error: 'Missing required fields' });
-  }
-  
-  const newSettlement = {
-    id: settlements.length + 1,
-    amount: parseFloat(amount),
-    paidBy,
-    paidTo,
-    description: description || 'Settlement',
-    date: new Date().toISOString().split('T')[0]
-  };
-  
-  settlements.push(newSettlement);
-  res.json({ success: true, data: newSettlement });
-});
-
-// Auth endpoints (simple mock implementation)
-app.post('/api/auth/sign-in', (req, res) => {
-  const { email, password } = req.body;
-  
-  // Simple mock authentication
-  const validUsers = {
-    'taha@nawrasinchina.com': { password: 'taha2024', name: 'Taha', id: 'taha' },
-    'burak@nawrasinchina.com': { password: 'burak2024', name: 'Burak', id: 'burak' }
-  };
-  
-  const user = validUsers[email];
-  if (!user || user.password !== password) {
-    return res.status(401).json({ success: false, error: 'Invalid credentials' });
-  }
-  
-  const session = {
-    id: `session_${Date.now()}`,
-    userId: user.id,
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    user: {
-      id: user.id,
-      email,
-      name: user.name,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  };
-  
-  res.json({ success: true, data: { user: session.user, session } });
-});
-
-app.post('/api/auth/sign-out', (req, res) => {
-  res.json({ success: true, message: 'Signed out successfully' });
-});
-
-app.get('/api/auth/session', (req, res) => {
-  // For demo purposes, return null (no active session)
-  // In real app, this would check session tokens/cookies
-  res.json({ success: true, data: null });
-});
-
-// Database setup endpoint (for easier initialization)
-app.post('/api/setup-database', async (req, res) => {
+// Update expense
+app.put('/api/expenses/:id', async (req, res) => {
   try {
-    console.log('🔧 Manual database setup requested...');
-    const result = await SupabaseBackendService.initializeDatabase();
+    const { id } = req.params;
+    const updates = req.body;
     
-    if (result.success) {
-      res.json({ 
-        success: true, 
-        message: 'Database setup completed successfully',
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: result.error,
-        message: 'Database setup failed'
-      });
-    }
+    const { data, error } = await supabase
+      .from('nawras_expenses')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select(`
+        *,
+        paid_by:nawras_users!nawras_expenses_paid_by_id_fkey(*)
+      `)
+      .single();
+    
+    if (error) throw error;
+    res.json(data);
   } catch (error) {
-    console.error('Setup endpoint error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: 'Database setup failed'
+    console.error('Error updating expense:', error);
+    res.status(500).json({ error: 'Failed to update expense' });
+  }
+});
+
+// Delete expense
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const { error } = await supabase
+      .from('nawras_expenses')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting expense:', error);
+    res.status(500).json({ error: 'Failed to delete expense' });
+  }
+});
+
+// Get all settlements with user information
+app.get('/api/settlements', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('nawras_settlements')
+      .select(`
+        *,
+        paid_by_user:nawras_users!nawras_settlements_paid_by_fkey(*),
+        paid_to_user:nawras_users!nawras_settlements_paid_to_fkey(*)
+      `)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching settlements:', error);
+    res.status(500).json({ error: 'Failed to fetch settlements' });
+  }
+});
+
+// Create new settlement
+app.post('/api/settlements', async (req, res) => {
+  try {
+    const { amount, paid_by, paid_to, description, date } = req.body;
+    
+    const { data, error } = await supabase
+      .from('nawras_settlements')
+      .insert({
+        amount,
+        paid_by,
+        paid_to,
+        description,
+        date
+      })
+      .select(`
+        *,
+        paid_by_user:nawras_users!nawras_settlements_paid_by_fkey(*),
+        paid_to_user:nawras_users!nawras_settlements_paid_to_fkey(*)
+      `)
+      .single();
+    
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('Error creating settlement:', error);
+    res.status(500).json({ error: 'Failed to create settlement' });
+  }
+});
+
+// Dashboard analytics endpoint
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    // Get all data in parallel
+    const [expensesResult, settlementsResult, usersResult] = await Promise.all([
+      supabase
+        .from('nawras_expenses')
+        .select(`*, paid_by:nawras_users!nawras_expenses_paid_by_id_fkey(*)`),
+      supabase
+        .from('nawras_settlements')
+        .select(`*, paid_by_user:nawras_users!nawras_settlements_paid_by_fkey(*), paid_to_user:nawras_users!nawras_settlements_paid_to_fkey(*)`),
+      supabase
+        .from('nawras_users')
+        .select('*')
+    ]);
+
+    if (expensesResult.error) throw expensesResult.error;
+    if (settlementsResult.error) throw settlementsResult.error;
+    if (usersResult.error) throw usersResult.error;
+
+    const expenses = expensesResult.data || [];
+    const settlements = settlementsResult.data || [];
+    const users = usersResult.data || [];
+
+    // Calculate analytics
+    const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+    const totalSettlements = settlements.reduce((sum, settlement) => sum + Number(settlement.amount), 0);
+
+    // Expenses by category
+    const expensesByCategory = expenses.reduce((acc, expense) => {
+      acc[expense.category] = (acc[expense.category] || 0) + Number(expense.amount);
+      return acc;
+    }, {});
+
+    // Monthly expenses (last 6 months)
+    const monthlyExpenses = expenses.reduce((acc, expense) => {
+      const month = new Date(expense.date).toISOString().slice(0, 7);
+      acc[month] = (acc[month] || 0) + Number(expense.amount);
+      return acc;
+    }, {});
+
+    // User balances
+    const userBalances = users.map(user => {
+      const userExpenses = expenses
+        .filter(expense => expense.paid_by_id === user.user_id)
+        .reduce((sum, expense) => sum + Number(expense.amount), 0);
+      
+      const settlementsOut = settlements
+        .filter(settlement => settlement.paid_by === user.user_id)
+        .reduce((sum, settlement) => sum + Number(settlement.amount), 0);
+      
+      const settlementsIn = settlements
+        .filter(settlement => settlement.paid_to === user.user_id)
+        .reduce((sum, settlement) => sum + Number(settlement.amount), 0);
+
+      return {
+        user_id: user.user_id,
+        name: user.name,
+        balance: userExpenses - settlementsOut + settlementsIn,
+        totalExpenses: userExpenses,
+        settlementsOut,
+        settlementsIn
+      };
     });
+
+    res.json({
+      totalExpenses,
+      totalSettlements,
+      expensesByCategory,
+      monthlyExpenses,
+      userBalances,
+      recentExpenses: expenses.slice(0, 5),
+      recentSettlements: settlements.slice(0, 5)
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
   }
 });
 
-// Health check endpoint for deployment platforms
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    version: '11.0.0'
-  });
-});
-
-// Serve React App for all other routes
+// Serve React app for all non-API routes
 app.get('*', (req, res) => {
-  // Skip API routes
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API route not found' });
-  }
-
-  // Serve the React app for all other routes
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Nawras Admin Partner server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'production'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📊 React app: http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📊 Dashboard: http://localhost:${PORT}`);
+  console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`🗄️  Database: Connected to Supabase`);
 });
 
 export default app;

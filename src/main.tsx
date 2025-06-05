@@ -10,11 +10,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <SettingsProvider>
-          <QueryProvider>
-            <App />
-          </QueryProvider>
-        </SettingsProvider>
+      <SettingsProvider>
+        <QueryProvider>
+          <App />
+        </QueryProvider>
+      </SettingsProvider>
       </AuthProvider>
     </ErrorBoundary>
   </StrictMode>,

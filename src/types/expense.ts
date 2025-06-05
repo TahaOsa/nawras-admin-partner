@@ -6,8 +6,10 @@ export interface Expense {
   description: string;
   category: string;
   paidById: string;
+  paidBy?: string; // Optional user name for display purposes
   date: string; // ISO date string (YYYY-MM-DD)
   createdAt: string; // ISO datetime string
+  updatedAt?: string; // Optional updated timestamp
 }
 
 // For creating new expenses (without id and createdAt)
