@@ -31,12 +31,13 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    version: '3.0.0',
-    server: 'react-dashboard-deployed',
+    version: '3.0.0-working-dashboard',
+    server: 'working-dashboard-deployed',
     environment: process.env.NODE_ENV || 'production',
-    buildStatus: 'react-app-built-successfully',
+    buildStatus: 'working-dashboard-active',
     deploymentTime: new Date().toISOString(),
-    features: ['dashboard', 'expense-tracking', 'charts', 'settlements', 'reports']
+    features: ['dashboard', 'expense-tracking', 'add-expense', 'balance-calculation', 'real-time-data'],
+    deploymentId: Date.now()
   });
 });
 
