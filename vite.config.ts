@@ -15,19 +15,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'esbuild', // Use esbuild for faster builds
+    minify: true,
     target: 'es2020',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['wouter'],
-          query: ['@tanstack/react-query'],
-          ui: ['lucide-react', 'clsx'],
-          charts: ['recharts'],
-        },
-      },
-    },
     chunkSizeWarningLimit: 1000,
   },
 

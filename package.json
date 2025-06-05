@@ -8,7 +8,7 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "nodemon server.js",
     "dev:client": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build --mode production",
     "build:simple": "vite build",
     "build:server": "node server.js",
     "preview": "vite preview",
