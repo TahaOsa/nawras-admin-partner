@@ -16,12 +16,19 @@ interface ExpenseItemProps {
 
 const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense }) => {
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-    });
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const getUserName = (userId: string) => {
@@ -72,6 +79,7 @@ export const RecentExpenses: React.FC = () => {
   // Get the 5 most recent expenses
   const recentExpenses = React.useMemo(() => {
     return [...expenses]
+      .filter(expense => expense.date && !isNaN(new Date(expense.date).getTime()))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
   }, [expenses]);

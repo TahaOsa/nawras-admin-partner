@@ -75,7 +75,13 @@ const HistoryPage: React.FC = () => {
 
       switch (expenseFilters.sortBy || 'date') {
         case 'date':
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+            comparison = 0; // Keep original order if dates are invalid
+          } else {
+            comparison = dateA.getTime() - dateB.getTime();
+          }
           break;
         case 'amount':
           comparison = a.amount - b.amount;
@@ -90,7 +96,13 @@ const HistoryPage: React.FC = () => {
           comparison = (a.paidBy || '').localeCompare(b.paidBy || '');
           break;
         default:
-          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          const defaultDateA = new Date(a.date);
+          const defaultDateB = new Date(b.date);
+          if (isNaN(defaultDateA.getTime()) || isNaN(defaultDateB.getTime())) {
+            comparison = 0; // Keep original order if dates are invalid
+          } else {
+            comparison = defaultDateA.getTime() - defaultDateB.getTime();
+          }
           break;
       }
 
@@ -336,11 +348,18 @@ const HistoryPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(item.date).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
+                        {(() => {
+                          try {
+                            const date = new Date(item.date);
+                            return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            });
+                          } catch (error) {
+                            return 'Invalid Date';
+                          }
+                        })()}
                       </td>
                     </tr>
                   ))}

@@ -130,11 +130,18 @@ const HomePage: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {expense.category} • {new Date(expense.date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
+                          {expense.category} • {(() => {
+                            try {
+                              const date = new Date(expense.date);
+                              return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              });
+                            } catch (error) {
+                              return 'Invalid Date';
+                            }
+                          })()}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">

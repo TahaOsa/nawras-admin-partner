@@ -20,18 +20,25 @@ export const ExpenseChart: React.FC = () => {
     const monthlyData: { [key: string]: { taha: number; burak: number } } = {};
 
     expenses.forEach(expense => {
-      const date = new Date(expense.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      // const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      try {
+        const date = new Date(expense.date);
+        if (isNaN(date.getTime())) {
+          return; // Skip invalid dates
+        }
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { taha: 0, burak: 0 };
-      }
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = { taha: 0, burak: 0 };
+        }
 
-      if (expense.paidById === 'taha') {
-        monthlyData[monthKey].taha += expense.amount;
-      } else if (expense.paidById === 'burak') {
-        monthlyData[monthKey].burak += expense.amount;
+        if (expense.paidById === 'taha') {
+          monthlyData[monthKey].taha += expense.amount;
+        } else if (expense.paidById === 'burak') {
+          monthlyData[monthKey].burak += expense.amount;
+        }
+      } catch (error) {
+        // Skip expenses with invalid date formats
+        return;
       }
     });
 
@@ -46,12 +53,13 @@ export const ExpenseChart: React.FC = () => {
         
         return {
           month: monthName,
+          monthKey: monthKey, // Keep the original key for sorting
           taha: Math.round(data.taha * 100) / 100,
           burak: Math.round(data.burak * 100) / 100,
           total: Math.round((data.taha + data.burak) * 100) / 100,
         };
       })
-      .sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+      .sort((a, b) => a.monthKey.localeCompare(b.monthKey));
   }, [expenses]);
 
   if (isLoading) {
