@@ -120,13 +120,6 @@ export const BalanceSummary: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-      {/* Debug info */}
-      <div className="col-span-4 bg-green-50 border border-green-200 rounded-lg p-2 mb-4">
-        <p className="text-green-800 text-xs">
-          ✅ Dashboard API Working! Partnership Balance: Taha: {tahaData.partnershipBalance}, Net: {netBalance}
-        </p>
-      </div>
-      
       <BalanceCard
         title="Taha's Account"
         amount={tahaData.totalPaid}

@@ -273,6 +273,97 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+// Analytics endpoints
+app.get('/api/analytics/monthly', async (req, res) => {
+  try {
+    const { period = 'all' } = req.query;
+    
+    const { data: expenses, error } = await supabase
+      .from('nawras_expenses')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (error) throw error;
+
+    // Group by month
+    const monthlyData = (expenses || []).reduce((acc, expense) => {
+      const month = new Date(expense.date).toISOString().slice(0, 7);
+      if (!acc[month]) {
+        acc[month] = { period: month, totalAmount: 0, expenseCount: 0 };
+      }
+      acc[month].totalAmount += Number(expense.amount);
+      acc[month].expenseCount += 1;
+      return acc;
+    }, {});
+
+    const result = Object.values(monthlyData);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error fetching monthly analytics:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch monthly analytics' });
+  }
+});
+
+app.get('/api/analytics/categories', async (req, res) => {
+  try {
+    const { data: expenses, error } = await supabase
+      .from('nawras_expenses')
+      .select('*');
+    
+    if (error) throw error;
+
+    // Group by category
+    const categoryData = (expenses || []).reduce((acc, expense) => {
+      const category = expense.category;
+      if (!acc[category]) {
+        acc[category] = { category, totalAmount: 0, expenseCount: 0 };
+      }
+      acc[category].totalAmount += Number(expense.amount);
+      acc[category].expenseCount += 1;
+      return acc;
+    }, {});
+
+    const result = Object.values(categoryData);
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error fetching category analytics:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch category analytics' });
+  }
+});
+
+app.get('/api/analytics/users', async (req, res) => {
+  try {
+    const [expensesResult, usersResult] = await Promise.all([
+      supabase.from('nawras_expenses').select('*'),
+      supabase.from('nawras_users').select('*')
+    ]);
+
+    if (expensesResult.error) throw expensesResult.error;
+    if (usersResult.error) throw usersResult.error;
+
+    const expenses = expensesResult.data || [];
+    const users = usersResult.data || [];
+
+    // Calculate user spending
+    const userData = users.map(user => {
+      const userExpenses = expenses.filter(expense => expense.paid_by_id === user.user_id);
+      const totalAmount = userExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+      
+      return {
+        user: user.name,
+        totalAmount,
+        expenseCount: userExpenses.length,
+        avgExpense: userExpenses.length > 0 ? totalAmount / userExpenses.length : 0
+      };
+    });
+
+    res.json({ success: true, data: userData });
+  } catch (error) {
+    console.error('Error fetching user analytics:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user analytics' });
+  }
+});
+
 // Serve React app for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

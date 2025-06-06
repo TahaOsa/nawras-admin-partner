@@ -1,10 +1,10 @@
 // Dashboard homepage component
 import React, { useState } from 'react';
 import { Link } from 'wouter';
-import { Plus, TrendingUp, Calendar, Users, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Calendar, TrendingUp, Edit2, Trash2 } from 'lucide-react';
 
 import { useExpenses } from '../hooks';
-import { calculateBalance, getExpenseSummary, formatCurrency, UserId } from '../lib';
+import { formatCurrency } from '../lib';
 import { EditExpenseModal, DeleteExpenseModal, QuickSearch, DashboardCharts } from '../components';
 import { BalanceSummary } from '../features/dashboard';
 import type { Expense, ExpenseFilters } from '../types';
