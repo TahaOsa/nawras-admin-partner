@@ -19,19 +19,49 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    // Log error details for debugging
+    console.error('ErrorBoundary caught error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
+    
+    // Log additional context for debugging
+    console.error('Error context:', {
+      componentStack: errorInfo.componentStack,
+      errorMessage: error.message,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    });
+    
     this.setState({ error, errorInfo });
   }
 
   handleReload = () => {
+    // Clear any potentially corrupted state before reloading
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('react-query-cache');
+    } catch (e) {
+      console.warn('Failed to clear storage:', e);
+    }
     window.location.reload();
   };
 
   handleGoHome = () => {
+    // Clear state and go to home
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('react-query-cache');
+    } catch (e) {
+      console.warn('Failed to clear storage:', e);
+    }
     window.location.href = '/';
   };
 
@@ -64,7 +94,7 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-3">
               <button
                 onClick={this.handleReload}
                 className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"

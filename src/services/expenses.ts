@@ -61,6 +61,12 @@ export async function fetchExpenses(filters?: ExpenseFilters): Promise<Expense[]
 
     const data: SupabaseExpense[] = await response.json();
     
+    // Handle empty data gracefully
+    if (!Array.isArray(data)) {
+      logger.warn('API returned non-array data for expenses:', data);
+      return [];
+    }
+    
     logger.debug('Successfully fetched expenses:', data.length, 'items');
     
     // Apply client-side filtering if needed
@@ -89,7 +95,8 @@ export async function fetchExpenses(filters?: ExpenseFilters): Promise<Expense[]
     return filteredData.map(mapSupabaseExpense);
   } catch (error) {
     logger.error('Error fetching expenses:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent app crashes
+    return [];
   }
 }
 
