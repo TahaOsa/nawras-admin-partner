@@ -11,6 +11,7 @@ import {
   updateExpense,
   deleteExpense
 } from '../services/expenses';
+import { dashboardKeys } from './useDashboard';
 
 // Query keys for React Query
 export const expenseKeys = {
@@ -59,6 +60,9 @@ export function useCreateExpense() {
       // Invalidate and refetch expenses list
       queryClient.invalidateQueries({ queryKey: expenseKeys.lists() });
 
+      // Invalidate dashboard data to update balance calculations
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
+
       // Optionally add the new expense to the cache
       queryClient.setQueryData(expenseKeys.detail(newExpense.id), newExpense);
     },
@@ -83,6 +87,9 @@ export function useUpdateExpense() {
 
       // Invalidate expenses list to refetch
       queryClient.invalidateQueries({ queryKey: expenseKeys.lists() });
+
+      // Invalidate dashboard data to update balance calculations
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
     },
     onError: (error) => {
       console.error('Failed to update expense:', error);
@@ -104,6 +111,9 @@ export function useDeleteExpense() {
 
       // Invalidate expenses list to refetch
       queryClient.invalidateQueries({ queryKey: expenseKeys.lists() });
+
+      // Invalidate dashboard data to update balance calculations
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.data() });
     },
     onError: (error) => {
       console.error('Failed to delete expense:', error);

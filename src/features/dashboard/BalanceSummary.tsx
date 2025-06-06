@@ -1,7 +1,5 @@
 import React from 'react';
-import { useExpenses } from '../../hooks/useExpenses';
-import { useSettlements } from '../../hooks/useSettlements';
-import { calculateBalance } from '../../lib/expense-utils';
+import { useDashboard } from '../../hooks/useDashboard';
 import { DollarSign, TrendingUp, TrendingDown, Users, Calculator } from 'lucide-react';
 
 interface BalanceCardProps {
@@ -36,10 +34,9 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ title, amount, icon, color, s
 );
 
 export const BalanceSummary: React.FC = () => {
-  const { data: expenses = [], isLoading: expensesLoading } = useExpenses();
-  const { data: _settlements = [], isLoading: settlementsLoading } = useSettlements();
+  const { data: dashboardData, isLoading } = useDashboard();
 
-  if (expensesLoading || settlementsLoading) {
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {[...Array(4)].map((_, i) => (
@@ -53,70 +50,81 @@ export const BalanceSummary: React.FC = () => {
     );
   }
 
-  // Use new partnership calculation logic
-  const balance = calculateBalance(expenses);
-  
-  // Create balance description
+  if (!dashboardData || !dashboardData.userBalances || dashboardData.userBalances.length < 2) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="col-span-4 text-center text-gray-500 py-8">
+          Unable to load balance data
+        </div>
+      </div>
+    );
+  }
+
+  // Get user balances from API (partnership calculations already done by backend)
+  const tahaData = dashboardData.userBalances.find(u => u.user_id === 'taha');
+  const burakData = dashboardData.userBalances.find(u => u.user_id === 'burak');
+
+  if (!tahaData || !burakData) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="col-span-4 text-center text-gray-500 py-8">
+          User balance data not found
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate who owes whom and net balance
+  const netBalance = Math.abs(tahaData.partnershipBalance);
+  const whoOwesWhom = tahaData.partnershipBalance < 0 ? 'taha_owes_burak' : 
+                     tahaData.partnershipBalance > 0 ? 'burak_owes_taha' : 'balanced';
+
   const getBalanceDescription = () => {
-    if (balance.whoOwesWhom === 'balanced') {
+    if (whoOwesWhom === 'balanced') {
       return 'Perfect balance!';
-    } else if (balance.whoOwesWhom === 'burak_owes_taha') {
+    } else if (whoOwesWhom === 'burak_owes_taha') {
       return 'Burak owes Taha';
     } else {
       return 'Taha owes Burak';
     }
   };
 
-  const getBalanceDetails = () => {
-    const tahaTransactions = expenses.filter(e => e.paidById === 'taha').length;
-    const burakTransactions = expenses.filter(e => e.paidById === 'burak').length;
-    
-    return {
-      tahaInfo: `Paid $${balance.tahaPaid.toFixed(2)}, owes $${balance.tahaOwes.toFixed(2)}`,
-      burakInfo: `Paid $${balance.burakPaid.toFixed(2)}, owes $${balance.burakOwes.toFixed(2)}`,
-      tahaTransactions: `${tahaTransactions} transactions`,
-      burakTransactions: `${burakTransactions} transactions`
-    };
-  };
-
-  const details = getBalanceDetails();
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <BalanceCard
         title="Taha's Account"
-        amount={balance.tahaPaid}
+        amount={tahaData.totalPaid}
         icon={<DollarSign className="h-6 w-6 text-blue-600" />}
         color="text-blue-600"
-        subtitle={details.tahaInfo}
+        subtitle={`Paid $${tahaData.totalPaid.toFixed(2)}, owes $${tahaData.totalOwes.toFixed(2)}`}
       />
       
       <BalanceCard
         title="Burak's Account"
-        amount={balance.burakPaid}
+        amount={burakData.totalPaid}
         icon={<DollarSign className="h-6 w-6 text-green-600" />}
         color="text-green-600"
-        subtitle={details.burakInfo}
+        subtitle={`Paid $${burakData.totalPaid.toFixed(2)}, owes $${burakData.totalOwes.toFixed(2)}`}
       />
       
       <BalanceCard
         title="Partnership Total"
-        amount={balance.combinedTotal}
+        amount={dashboardData.totalExpenses}
         icon={<Users className="h-6 w-6 text-purple-600" />}
         color="text-purple-600"
-        subtitle={`Each partner owes $${balance.tahaOwes.toFixed(2)}`}
+        subtitle={`Each partner owes $${(dashboardData.totalExpenses / 2).toFixed(2)}`}
       />
       
       <BalanceCard
         title="Current Balance"
-        amount={balance.netBalance}
-        icon={balance.whoOwesWhom === 'balanced' ? 
+        amount={netBalance}
+        icon={whoOwesWhom === 'balanced' ? 
           <Calculator className="h-6 w-6 text-green-600" /> :
-          balance.whoOwesWhom === 'burak_owes_taha' ? 
+          whoOwesWhom === 'burak_owes_taha' ? 
           <TrendingUp className="h-6 w-6 text-red-600" /> : 
           <TrendingDown className="h-6 w-6 text-red-600" />
         }
-        color={balance.whoOwesWhom === 'balanced' ? "text-green-600" : "text-red-600"}
+        color={whoOwesWhom === 'balanced' ? "text-green-600" : "text-red-600"}
         subtitle={getBalanceDescription()}
       />
     </div>
