@@ -61,9 +61,9 @@ export async function fetchExpenses(filters?: ExpenseFilters): Promise<Expense[]
 
     const data: SupabaseExpense[] = await response.json();
     
-    // Handle empty data gracefully
+    // Safety check for empty or invalid data
     if (!Array.isArray(data)) {
-      logger.warn('API returned non-array data for expenses:', data);
+      logger.warn('Received non-array data from expenses API:', typeof data);
       return [];
     }
     
@@ -95,7 +95,9 @@ export async function fetchExpenses(filters?: ExpenseFilters): Promise<Expense[]
     return filteredData.map(mapSupabaseExpense);
   } catch (error) {
     logger.error('Error fetching expenses:', error);
-    // Return empty array instead of throwing to prevent app crashes
+    
+    // Return empty array instead of throwing to prevent ErrorBoundary
+    logger.warn('Returning empty expenses array due to error');
     return [];
   }
 }

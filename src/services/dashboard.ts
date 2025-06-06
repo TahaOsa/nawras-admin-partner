@@ -43,11 +43,22 @@ export async function fetchDashboardData(): Promise<DashboardData> {
       throw new Error(`Failed to fetch dashboard data: ${response.status} ${response.statusText}`);
     }
 
-    const data: DashboardData = await response.json();
+    const data = await response.json();
     
-    logger.debug('Successfully fetched dashboard data:', data);
+    // Ensure we have safe default values for empty states
+    const safeData: DashboardData = {
+      totalExpenses: data.totalExpenses || 0,
+      totalSettlements: data.totalSettlements || 0,
+      expensesByCategory: data.expensesByCategory || {},
+      monthlyExpenses: data.monthlyExpenses || {},
+      userBalances: Array.isArray(data.userBalances) ? data.userBalances : [],
+      recentExpenses: Array.isArray(data.recentExpenses) ? data.recentExpenses : [],
+      recentSettlements: Array.isArray(data.recentSettlements) ? data.recentSettlements : []
+    };
+
+    logger.debug('Successfully fetched dashboard data:', safeData);
     
-    return data;
+    return safeData;
   } catch (error) {
     logger.error('Error fetching dashboard data:', error);
     throw error;
