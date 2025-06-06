@@ -1,7 +1,8 @@
 import React from 'react';
 import { useExpenses } from '../../hooks/useExpenses';
 import { useSettlements } from '../../hooks/useSettlements';
-import { DollarSign, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import { calculateBalance } from '../../lib/expense-utils';
+import { DollarSign, TrendingUp, TrendingDown, Users, Calculator } from 'lucide-react';
 
 interface BalanceCardProps {
   title: string;
@@ -25,7 +26,9 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ title, amount, icon, color, s
       </div>
       <div className={`p-3 rounded-full ${color.includes('blue') ? 'bg-blue-100' : 
                                          color.includes('green') ? 'bg-green-100' : 
-                                         color.includes('red') ? 'bg-red-100' : 'bg-gray-100'}`}>
+                                         color.includes('red') ? 'bg-red-100' : 
+                                         color.includes('purple') ? 'bg-purple-100' :
+                                         'bg-gray-100'}`}>
         {icon}
       </div>
     </div>
@@ -50,62 +53,71 @@ export const BalanceSummary: React.FC = () => {
     );
   }
 
-  // Calculate balances
-  const tahaExpenses = expenses
-    .filter(e => e.paidById === 'taha')
-    .reduce((sum, e) => sum + e.amount, 0);
+  // Use new partnership calculation logic
+  const balance = calculateBalance(expenses);
   
-  const burakExpenses = expenses
-    .filter(e => e.paidById === 'burak')
-    .reduce((sum, e) => sum + e.amount, 0);
-  
-  const totalExpenses = tahaExpenses + burakExpenses;
-  
-  // Calculate settlements (for future use)
-  // const totalSettlements = settlements.reduce((sum, s) => sum + s.amount, 0);
-  
-  // Calculate net balance (who owes whom)
-  const rawBalance = tahaExpenses - burakExpenses;
-  const netBalance = Math.abs(rawBalance);
-  const balanceOwer = rawBalance > 0 ? 'Burak owes Taha' : rawBalance < 0 ? 'Taha owes Burak' : 'Balanced';
+  // Create balance description
+  const getBalanceDescription = () => {
+    if (balance.whoOwesWhom === 'balanced') {
+      return 'Perfect balance!';
+    } else if (balance.whoOwesWhom === 'burak_owes_taha') {
+      return 'Burak owes Taha';
+    } else {
+      return 'Taha owes Burak';
+    }
+  };
+
+  const getBalanceDetails = () => {
+    const tahaTransactions = expenses.filter(e => e.paidById === 'taha').length;
+    const burakTransactions = expenses.filter(e => e.paidById === 'burak').length;
+    
+    return {
+      tahaInfo: `Paid $${balance.tahaPaid.toFixed(2)}, owes $${balance.tahaOwes.toFixed(2)}`,
+      burakInfo: `Paid $${balance.burakPaid.toFixed(2)}, owes $${balance.burakOwes.toFixed(2)}`,
+      tahaTransactions: `${tahaTransactions} transactions`,
+      burakTransactions: `${burakTransactions} transactions`
+    };
+  };
+
+  const details = getBalanceDetails();
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <BalanceCard
-        title="Taha's Expenses"
-        amount={tahaExpenses}
+        title="Taha's Account"
+        amount={balance.tahaPaid}
         icon={<DollarSign className="h-6 w-6 text-blue-600" />}
         color="text-blue-600"
-        subtitle={`${expenses.filter(e => e.paidById === 'taha').length} transactions`}
+        subtitle={details.tahaInfo}
       />
       
       <BalanceCard
-        title="Burak's Expenses"
-        amount={burakExpenses}
+        title="Burak's Account"
+        amount={balance.burakPaid}
         icon={<DollarSign className="h-6 w-6 text-green-600" />}
         color="text-green-600"
-        subtitle={`${expenses.filter(e => e.paidById === 'burak').length} transactions`}
+        subtitle={details.burakInfo}
       />
       
       <BalanceCard
-        title="Total Combined"
-        amount={totalExpenses}
-        icon={<Users className="h-6 w-6 text-gray-600" />}
-        color="text-gray-900"
-        subtitle={`${expenses.length} total expenses`}
+        title="Partnership Total"
+        amount={balance.combinedTotal}
+        icon={<Users className="h-6 w-6 text-purple-600" />}
+        color="text-purple-600"
+        subtitle={`Each partner owes $${balance.tahaOwes.toFixed(2)}`}
       />
       
       <BalanceCard
         title="Current Balance"
-        amount={netBalance}
-        icon={rawBalance > 0 ? 
+        amount={balance.netBalance}
+        icon={balance.whoOwesWhom === 'balanced' ? 
+          <Calculator className="h-6 w-6 text-green-600" /> :
+          balance.whoOwesWhom === 'burak_owes_taha' ? 
           <TrendingUp className="h-6 w-6 text-red-600" /> : 
-          rawBalance < 0 ? 
-          <TrendingDown className="h-6 w-6 text-red-600" /> :
-          <DollarSign className="h-6 w-6 text-green-600" />
+          <TrendingDown className="h-6 w-6 text-red-600" />
         }
-        color={rawBalance === 0 ? "text-green-600" : "text-red-600"}
-        subtitle={balanceOwer}
+        color={balance.whoOwesWhom === 'balanced' ? "text-green-600" : "text-red-600"}
+        subtitle={getBalanceDescription()}
       />
     </div>
   );

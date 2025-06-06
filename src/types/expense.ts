@@ -115,8 +115,15 @@ export interface BalanceCalculation {
   tahaTotal: number;
   burakTotal: number;
   combinedTotal: number;
-  netBalance: number; // Absolute value of running balance (always positive for display)
+  netBalance: number; // Absolute value of net balance (always positive for display)
   whoOwesWhom: 'taha_owes_burak' | 'burak_owes_taha' | 'balanced';
+  // Partnership-specific fields (50/50 split calculation)
+  tahaPaid: number;      // Total amount Taha has paid
+  burakPaid: number;     // Total amount Burak has paid  
+  tahaOwes: number;      // Taha's 50% share of total expenses
+  burakOwes: number;     // Burak's 50% share of total expenses
+  tahaBalance: number;   // Taha's balance (paid - owes, can be negative)
+  burakBalance: number;  // Burak's balance (paid - owes, can be negative)
 }
 
 // Simple error response from API

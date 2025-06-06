@@ -227,7 +227,7 @@ app.get('/api/dashboard', async (req, res) => {
       return acc;
     }, {});
 
-    // User balances
+    // User balances with partnership logic (50/50 split)
     const userBalances = users.map(user => {
       const userExpenses = expenses
         .filter(expense => expense.paid_by_id === user.user_id)
@@ -241,11 +241,18 @@ app.get('/api/dashboard', async (req, res) => {
         .filter(settlement => settlement.paid_to === user.user_id)
         .reduce((sum, settlement) => sum + Number(settlement.amount), 0);
 
+      // Partnership calculation: each partner owes 50% of total expenses
+      const eachPartnerShare = totalExpenses / 2;
+      const partnershipBalance = userExpenses - eachPartnerShare;
+
       return {
         user_id: user.user_id,
         name: user.name,
-        balance: userExpenses - settlementsOut + settlementsIn,
-        totalExpenses: userExpenses,
+        balance: partnershipBalance, // Updated to partnership balance
+        partnershipBalance: partnershipBalance,
+        totalPaid: userExpenses,
+        totalOwes: eachPartnerShare,
+        totalExpenses: userExpenses, // Keep for backward compatibility
         settlementsOut,
         settlementsIn
       };

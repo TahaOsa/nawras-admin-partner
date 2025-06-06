@@ -174,24 +174,32 @@ export const processBalanceHistory = (
     ...settlements.map(s => ({ ...s, type: 'settlement' })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  let runningBalance = 0;
+  let tahaTotalPaid = 0;
+  let burakTotalPaid = 0;
   let cumulativeExpenses = 0;
   let totalSettlements = 0;
 
   return allTransactions.map(transaction => {
     if (transaction.type === 'expense') {
       cumulativeExpenses += transaction.amount;
-      // Taha's expenses are positive (he owes), Burak's are negative (he's owed)
+      
+      // Track total paid by each partner
       if (transaction.paidById === 'taha') {
-        runningBalance += transaction.amount;
-      } else {
-        runningBalance -= transaction.amount;
+        tahaTotalPaid += transaction.amount;
+      } else if (transaction.paidById === 'burak') {
+        burakTotalPaid += transaction.amount;
       }
     } else {
       totalSettlements += transaction.amount;
-      // Settlements adjust the balance
-      runningBalance -= transaction.amount;
+      // Note: Settlements would adjust the balance but we'll handle that separately
     }
+
+    // Calculate partnership balance (50/50 split)
+    const totalExpenses = tahaTotalPaid + burakTotalPaid;
+    const eachPartnerShare = totalExpenses / 2;
+    const tahaBalance = tahaTotalPaid - eachPartnerShare;
+    const burakBalance = burakTotalPaid - eachPartnerShare;
+    const runningBalance = tahaBalance - burakBalance; // Net balance between partners
 
     return {
       date: transaction.date,

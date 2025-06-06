@@ -8,9 +8,12 @@ import type {
 import { UserId } from '../types';
 
 /**
- * Calculate balance between partners based on expenses
- * Logic: Track running balance where Taha's expenses are positive (he owes)
- * and Burak's expenses are negative (he's owed)
+ * Calculate balance between partners based on 50/50 expense splitting
+ * Partnership Logic: 
+ * - All expenses are automatically split 50/50 between partners
+ * - Each partner's share = total expenses / 2
+ * - Balance = what they paid - what they owe
+ * - Positive balance = credit (owed money), Negative balance = debt (owes money)
  */
 export function calculateBalance(expenses: Expense[]): BalanceCalculation {
   const tahaTotal = expenses
@@ -23,20 +26,20 @@ export function calculateBalance(expenses: Expense[]): BalanceCalculation {
 
   const combinedTotal = tahaTotal + burakTotal;
 
-  // Calculate running balance: Taha's expenses are positive (he owes), Burak's are negative (he's owed)
-  let runningBalance = 0;
-  expenses.forEach(expense => {
-    if (expense.paidById === UserId.TAHA) {
-      runningBalance += expense.amount;
-    } else if (expense.paidById === UserId.BURAK) {
-      runningBalance -= expense.amount;
-    }
-  });
+  // Partnership calculation: Each partner owes 50% of total expenses
+  const eachPartnerShare = combinedTotal / 2;
+  
+  // Calculate each partner's balance (what they paid - what they owe)
+  const tahaBalance = tahaTotal - eachPartnerShare;
+  const burakBalance = burakTotal - eachPartnerShare;
+  
+  // Net balance between partners (positive = Burak owes Taha, negative = Taha owes Burak)
+  const netBalance = tahaBalance - burakBalance;
 
   let whoOwesWhom: BalanceCalculation['whoOwesWhom'];
-  if (Math.abs(runningBalance) < 0.01) {
+  if (Math.abs(netBalance) < 0.01) {
     whoOwesWhom = 'balanced';
-  } else if (runningBalance > 0) {
+  } else if (netBalance > 0) {
     whoOwesWhom = 'burak_owes_taha';
   } else {
     whoOwesWhom = 'taha_owes_burak';
@@ -46,8 +49,15 @@ export function calculateBalance(expenses: Expense[]): BalanceCalculation {
     tahaTotal,
     burakTotal,
     combinedTotal,
-    netBalance: Math.abs(runningBalance),
-    whoOwesWhom
+    netBalance: Math.abs(netBalance),
+    whoOwesWhom,
+    // Add new partnership-specific data
+    tahaPaid: tahaTotal,
+    burakPaid: burakTotal,
+    tahaOwes: eachPartnerShare,
+    burakOwes: eachPartnerShare,
+    tahaBalance: tahaBalance,
+    burakBalance: burakBalance
   };
 }
 
