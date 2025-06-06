@@ -6,6 +6,7 @@ import { Plus, TrendingUp, Calendar, Users, Edit2, Trash2 } from 'lucide-react';
 import { useExpenses } from '../hooks';
 import { calculateBalance, getExpenseSummary, formatCurrency, UserId } from '../lib';
 import { EditExpenseModal, DeleteExpenseModal, QuickSearch, DashboardCharts } from '../components';
+import { BalanceSummary } from '../features/dashboard';
 import type { Expense, ExpenseFilters } from '../types';
 
 const HomePage: React.FC = () => {
@@ -16,24 +17,19 @@ const HomePage: React.FC = () => {
     sortOrder: 'desc'
   });
 
-  // Fetch all expenses for balance calculations
-  const { data: allExpenses = [], isLoading: allExpensesLoading, error: allExpensesError } = useExpenses();
-
   // Fetch filtered expenses for recent expenses display
   const { data: recentExpenses = [], isLoading: recentExpensesLoading, error: recentExpensesError } = useExpenses(recentExpensesFilters);
+  
+  // Also fetch all expenses for the expenses count display
+  const { data: allExpenses = [] } = useExpenses();
 
   // Modal states
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
 
-  // Calculate real data from all expenses (for balance)
-  const balanceData = React.useMemo(() => calculateBalance(allExpenses), [allExpenses]);
-  const tahaSummary = React.useMemo(() => getExpenseSummary(allExpenses, UserId.TAHA), [allExpenses]);
-  const burakSummary = React.useMemo(() => getExpenseSummary(allExpenses, UserId.BURAK), [allExpenses]);
-
   // Combined loading and error states
-  const isLoading = allExpensesLoading || recentExpensesLoading;
-  const error = allExpensesError || recentExpensesError;
+  const isLoading = recentExpensesLoading;
+  const error = recentExpensesError;
 
   return (
     <div className="p-4 md:p-8">
@@ -57,114 +53,7 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Balance Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-          {error && (
-            <div className="col-span-full bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm">
-                Failed to load expense data: {error.message}
-              </p>
-            </div>
-          )}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Taha's Expenses</h3>
-                <p className="text-2xl font-bold text-blue-600">
-                  {isLoading ? (
-                    <div className="h-8 bg-blue-100 rounded animate-pulse w-20"></div>
-                  ) : (
-                    formatCurrency(balanceData.tahaTotal)
-                  )}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {isLoading ? (
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                  ) : (
-                    `${tahaSummary.expenseCount} expense${tahaSummary.expenseCount !== 1 ? 's' : ''}`
-                  )}
-                </p>
-              </div>
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Burak's Expenses</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  {isLoading ? (
-                    <div className="h-8 bg-green-100 rounded animate-pulse w-20"></div>
-                  ) : (
-                    formatCurrency(balanceData.burakTotal)
-                  )}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {isLoading ? (
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
-                  ) : (
-                    `${burakSummary.expenseCount} expense${burakSummary.expenseCount !== 1 ? 's' : ''}`
-                  )}
-                </p>
-              </div>
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Users className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Combined Total</h3>
-                <p className="text-2xl font-bold text-purple-600">
-                  {isLoading ? (
-                    <div className="h-8 bg-purple-100 rounded animate-pulse w-20"></div>
-                  ) : (
-                    formatCurrency(balanceData.combinedTotal)
-                  )}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {isLoading ? (
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
-                  ) : (
-                    `${allExpenses.length} total expense${allExpenses.length !== 1 ? 's' : ''}`
-                  )}
-                </p>
-              </div>
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="h-5 w-5 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Net Balance</h3>
-                <p className="text-2xl font-bold text-orange-600">
-                  {isLoading ? (
-                    <div className="h-8 bg-orange-100 rounded animate-pulse w-20"></div>
-                  ) : (
-                    formatCurrency(balanceData.netBalance)
-                  )}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {balanceData.whoOwesWhom === 'balanced'
-                    ? 'All settled!'
-                    : balanceData.whoOwesWhom === 'taha_owes_burak'
-                    ? 'Taha owes Burak'
-                    : 'Burak owes Taha'}
-                </p>
-              </div>
-              <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-orange-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <BalanceSummary />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
