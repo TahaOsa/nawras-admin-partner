@@ -1,20 +1,8 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role?: string;
-  emailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { User as SupabaseUser, Session as SupabaseSession } from '@supabase/supabase-js';
 
-export interface Session {
-  id: string;
-  userId: string;
-  user: User;
-  expiresAt: Date;
-  token: string;
-}
+// Use Supabase types directly
+export type User = SupabaseUser;
+export type Session = SupabaseSession;
 
 export interface AuthState {
   user: User | null;

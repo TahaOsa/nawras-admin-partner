@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authClient } from '../../lib/auth/auth-client';
+import { auth, supabase } from '../../lib/supabase';
 import type { AuthContextType, User, Session, SignInCredentials } from '../../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,11 +25,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const session = await authClient.getSession();
+        const { session } = await auth.getCurrentSession();
         if (session) {
           setAuthState({
             user: session.user,
-            session,
+            session: session,
             isLoading: false,
             isAuthenticated: true,
           });
@@ -53,19 +53,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          setAuthState({
+            user: session.user,
+            session: session,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+        } else {
+          setAuthState({
+            user: null,
+            session: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (credentials: SignInCredentials) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const { user, session } = await authClient.signIn(credentials);
-      setAuthState({
-        user,
-        session,
-        isLoading: false,
-        isAuthenticated: true,
-      });
+      const { data, error } = await auth.signInWithEmail(credentials.email, credentials.password);
+      
+      if (error) {
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+        throw error;
+      }
+
+      if (data.session && data.user) {
+        setAuthState({
+          user: data.user,
+          session: data.session,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+      }
     } catch (error) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
       throw error;
@@ -76,7 +107,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      await authClient.signOut();
+      const { error } = await auth.signOut();
+      if (error) {
+        console.error('Sign out failed:', error);
+      }
+      // Clear state regardless of error
       setAuthState({
         user: null,
         session: null,

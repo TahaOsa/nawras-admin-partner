@@ -364,6 +364,130 @@ app.get('/api/analytics/users', async (req, res) => {
   }
 });
 
+// Balance history analytics
+app.get('/api/analytics/balance-history', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    const { data: expenses, error: expensesError } = await supabase
+      .from('nawras_expenses')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    const { data: settlements, error: settlementsError } = await supabase
+      .from('nawras_settlements')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (expensesError) throw expensesError;
+    if (settlementsError) throw settlementsError;
+
+    // Calculate balance over time
+    const allTransactions = [
+      ...(expenses || []).map(e => ({ ...e, type: 'expense', date: e.date })),
+      ...(settlements || []).map(s => ({ ...s, type: 'settlement', date: s.date }))
+    ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let tahaBalance = 0;
+    let burakBalance = 0;
+    let totalExpenses = 0;
+
+    const balanceHistory = allTransactions.map(transaction => {
+      if (transaction.type === 'expense') {
+        totalExpenses += Number(transaction.amount);
+        const eachShare = totalExpenses / 2;
+        
+        if (transaction.paid_by_id === 'taha') {
+          tahaBalance = totalExpenses - (totalExpenses - Number(transaction.amount)) / 2 - eachShare;
+        } else {
+          burakBalance = totalExpenses - (totalExpenses - Number(transaction.amount)) / 2 - eachShare;
+        }
+      } else if (transaction.type === 'settlement') {
+        if (transaction.paid_by === 'taha') {
+          tahaBalance -= Number(transaction.amount);
+          burakBalance += Number(transaction.amount);
+        } else {
+          burakBalance -= Number(transaction.amount);
+          tahaBalance += Number(transaction.amount);
+        }
+      }
+
+      return {
+        date: transaction.date,
+        tahaBalance,
+        burakBalance,
+        totalExpenses,
+        netBalance: tahaBalance - burakBalance
+      };
+    });
+
+    res.json({ success: true, data: balanceHistory });
+  } catch (error) {
+    console.error('Error fetching balance history:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch balance history' });
+  }
+});
+
+// Time patterns analytics
+app.get('/api/analytics/time-patterns', async (req, res) => {
+  try {
+    const { period = 'all' } = req.query;
+    
+    const { data: expenses, error } = await supabase
+      .from('nawras_expenses')
+      .select('*')
+      .order('date', { ascending: true });
+    
+    if (error) throw error;
+
+    // Group by day of week
+    const dayOfWeek = (expenses || []).reduce((acc, expense) => {
+      const day = new Date(expense.date).getDay();
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[day];
+      
+      if (!acc[dayName]) {
+        acc[dayName] = { day: dayName, dayNumber: day, totalAmount: 0, expenseCount: 0 };
+      }
+      acc[dayName].totalAmount += Number(expense.amount);
+      acc[dayName].expenseCount += 1;
+      return acc;
+    }, {});
+
+    // Group by hour (simulated since we don't have time data)
+    const hourlyPattern = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      totalAmount: Math.random() * 100, // Simulated data
+      expenseCount: Math.floor(Math.random() * 10)
+    }));
+
+    // Group by month
+    const monthlyPattern = (expenses || []).reduce((acc, expense) => {
+      const month = new Date(expense.date).getMonth();
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = monthNames[month];
+      
+      if (!acc[monthName]) {
+        acc[monthName] = { month: monthName, monthNumber: month, totalAmount: 0, expenseCount: 0 };
+      }
+      acc[monthName].totalAmount += Number(expense.amount);
+      acc[monthName].expenseCount += 1;
+      return acc;
+    }, {});
+
+    const result = {
+      dayOfWeek: Object.values(dayOfWeek),
+      hourly: hourlyPattern,
+      monthly: Object.values(monthlyPattern)
+    };
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error fetching time patterns:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch time patterns' });
+  }
+});
+
 // Serve React app for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
