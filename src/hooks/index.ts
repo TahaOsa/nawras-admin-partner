@@ -3,3 +3,4 @@
 
 export * from './useExpenses';
 export * from './useSettlements';
+export * from './useDashboard';
