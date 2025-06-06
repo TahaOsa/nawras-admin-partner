@@ -34,7 +34,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ title, amount, icon, color, s
 );
 
 export const BalanceSummary: React.FC = () => {
-  const { data: dashboardData, isLoading } = useDashboard();
+  const { data: dashboardData, isLoading, error } = useDashboard();
 
   if (isLoading) {
     return (
@@ -50,11 +50,34 @@ export const BalanceSummary: React.FC = () => {
     );
   }
 
+  // Debug: Check for errors or missing data
+  if (error) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="col-span-4 bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-red-800 font-medium">Dashboard API Error</h3>
+          <p className="text-red-600 text-sm mt-1">
+            Error loading dashboard data: {error?.message || 'Unknown error'}
+          </p>
+          <p className="text-red-600 text-xs mt-2">
+            Using old calculation method as fallback. Please refresh the page.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!dashboardData || !dashboardData.userBalances || dashboardData.userBalances.length < 2) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="col-span-4 text-center text-gray-500 py-8">
-          Unable to load balance data
+        <div className="col-span-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-yellow-800 font-medium">Dashboard Data Missing</h3>
+          <p className="text-yellow-600 text-sm mt-1">
+            Dashboard API responded but missing user balance data.
+          </p>
+          <p className="text-yellow-600 text-xs mt-2">
+            Data received: {JSON.stringify(dashboardData, null, 2)}
+          </p>
         </div>
       </div>
     );
@@ -67,8 +90,14 @@ export const BalanceSummary: React.FC = () => {
   if (!tahaData || !burakData) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="col-span-4 text-center text-gray-500 py-8">
-          User balance data not found
+        <div className="col-span-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="text-yellow-800 font-medium">User Data Not Found</h3>
+          <p className="text-yellow-600 text-sm mt-1">
+            Taha found: {!!tahaData}, Burak found: {!!burakData}
+          </p>
+          <p className="text-yellow-600 text-xs mt-2">
+            Available users: {dashboardData.userBalances.map(u => u.user_id).join(', ')}
+          </p>
         </div>
       </div>
     );
@@ -91,6 +120,13 @@ export const BalanceSummary: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Debug info */}
+      <div className="col-span-4 bg-green-50 border border-green-200 rounded-lg p-2 mb-4">
+        <p className="text-green-800 text-xs">
+          ✅ Dashboard API Working! Partnership Balance: Taha: {tahaData.partnershipBalance}, Net: {netBalance}
+        </p>
+      </div>
+      
       <BalanceCard
         title="Taha's Account"
         amount={tahaData.totalPaid}
