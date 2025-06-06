@@ -1,28 +1,35 @@
 import React from 'react';
-import { useAuth } from './AuthProvider';
-import { LoginPage } from './LoginPage';
+import { useAuth } from '../../providers/AuthProvider';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  fallback 
+}) => {
   const { isAuthenticated, isLoading } = useAuth();
 
+  // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
+  // If not authenticated, show fallback or redirect will be handled by routing
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return fallback || null;
   }
 
+  // If authenticated, render the protected content
   return <>{children}</>;
 };

@@ -6,6 +6,7 @@ import type {
   UpdateExpenseRequest
 } from '../types';
 import { config, logger } from '../lib/config';
+import { logApiError } from '../lib/errorLogger';
 
 // API base URL from configuration
 const API_BASE_URL = config.apiBaseUrl;
@@ -118,26 +119,57 @@ export async function fetchExpenseById(id: number): Promise<Expense> {
  * Create a new expense
  */
 export async function createExpense(expense: CreateExpenseRequest): Promise<Expense> {
-  const response = await fetch(`${API_BASE_URL}/api/expenses`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      amount: expense.amount,
-      category: expense.category,
-      description: expense.description,
-      paid_by_id: expense.paidById,
-      date: expense.date
-    }),
+  const url = `${API_BASE_URL}/api/expenses`;
+  
+  logger.debug('Creating expense:', {
+    url,
+    expense,
+    apiBaseUrl: API_BASE_URL
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to create expense: ${response.status} ${response.statusText}`);
-  }
+  const requestBody = {
+    amount: expense.amount,
+    category: expense.category,
+    description: expense.description,
+    paid_by_id: expense.paidById,
+    date: expense.date
+  };
 
-  const data: SupabaseExpense = await response.json();
-  return mapSupabaseExpense(data);
+  logger.debug('Request body:', requestBody);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    logger.debug('API Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      url: response.url
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('API Error Response:', errorText);
+      throw new Error(`Failed to create expense: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data: SupabaseExpense = await response.json();
+    logger.debug('API Success Response:', data);
+    
+    const mappedExpense = mapSupabaseExpense(data);
+    logger.debug('Mapped expense:', mappedExpense);
+    
+    return mappedExpense;
+  } catch (error) {
+    logger.error('Create expense error:', error);
+    throw error;
+  }
 }
 
 /**

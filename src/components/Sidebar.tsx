@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   Home,
@@ -7,10 +7,12 @@ import {
   History,
   BarChart3,
   Settings,
-  User
+  User,
+  LogOut,
+  AlertCircle
 } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useAuth, LogoutButton } from './auth';
+import { useAuth } from '../providers';
 
 interface NavItem {
   path: string;
@@ -29,7 +31,23 @@ const navItems: NavItem[] = [
 
 const Sidebar: React.FC = () => {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    setSignOutError(null);
+
+    try {
+      await signOut();
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      setSignOutError('Failed to sign out. Please try again.');
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <div className="hidden md:flex md:w-64 md:flex-col">
@@ -83,7 +101,7 @@ const Sidebar: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {user.name}
+                    {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
                     {user.email}
@@ -93,9 +111,34 @@ const Sidebar: React.FC = () => {
             </div>
           )}
 
-          {/* Logout Button */}
+          {/* Sign Out Section */}
           <div className="p-4">
-            <LogoutButton className="w-full justify-center" />
+            {signOutError && (
+              <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-start">
+                  <AlertCircle className="h-4 w-4 text-red-400 mt-0.5 mr-2" />
+                  <p className="text-xs text-red-700">{signOutError}</p>
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isSigningOut ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
+                  Signing Out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </>
+              )}
+            </button>
           </div>
 
           {/* App Info */}

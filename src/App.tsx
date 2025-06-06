@@ -1,8 +1,10 @@
 import React from 'react';
 import { Route, Switch } from 'wouter';
 
-// Auth components - temporarily disabled for build
-// import { AuthProvider, ProtectedRoute } from './components/auth';
+// Auth components
+import { useAuth } from './providers';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import LoginPage from './components/auth/LoginPage';
 
 // Layout components
 import Sidebar from './components/Sidebar';
@@ -52,7 +54,31 @@ const AppContent: React.FC = () => {
 };
 
 function App() {
-  return <AppContent />;
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  // Show main app if authenticated
+  return (
+    <ProtectedRoute>
+      <AppContent />
+    </ProtectedRoute>
+  );
 }
 
 export default App

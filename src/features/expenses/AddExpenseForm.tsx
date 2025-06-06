@@ -119,13 +119,17 @@ const AddExpenseForm: React.FC = () => {
         date: formData.date,
       };
 
-      await createExpenseMutation.mutateAsync(expenseData);
+      console.log('Submitting expense data:', expenseData);
+      console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? window.location.origin : 'http://localhost:8080'));
+
+      const result = await createExpenseMutation.mutateAsync(expenseData);
+      console.log('Expense created successfully:', result);
       
       // Success - redirect to dashboard
       setLocation('/');
     } catch (error) {
       console.error('Failed to create expense:', error);
-      // Error is handled by the mutation hook
+      // Error is handled by the mutation hook and will be displayed in the UI
     } finally {
       setIsSubmitting(false);
     }

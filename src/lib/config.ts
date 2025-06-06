@@ -2,7 +2,7 @@
 export const config = {
   // API Configuration
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 
-    (import.meta.env.PROD ? window.location.origin : 'http://localhost:3001'),
+    (import.meta.env.PROD ? window.location.origin : 'http://localhost:8080'),
 
   // App Information
   appName: import.meta.env.VITE_APP_NAME || 'Nawras Admin',
@@ -18,7 +18,7 @@ export const config = {
   enableErrorReporting: import.meta.env.VITE_ENABLE_ERROR_REPORTING === 'true',
 
   // Logging
-  logLevel: import.meta.env.VITE_LOG_LEVEL || 'info',
+  logLevel: import.meta.env.VITE_LOG_LEVEL || (import.meta.env.PROD ? 'warn' : 'debug'),
 
   // Security
   enableCSP: import.meta.env.VITE_ENABLE_CSP === 'true',
