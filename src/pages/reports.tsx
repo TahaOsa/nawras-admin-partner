@@ -1,6 +1,7 @@
 // Comprehensive reports page with advanced analytics
 
-import { useState } from 'react';
+import { useState, Component } from 'react';
+import type { ReactNode } from 'react';
 import { Calendar, Download, TrendingUp, PieChart, BarChart3, DollarSign } from 'lucide-react';
 import { MonthlyTrendsChart } from '../components/charts/MonthlyTrendsChart';
 import { CategoryBreakdownChart } from '../components/charts/CategoryBreakdownChart';
@@ -17,6 +18,79 @@ import {
 } from '../hooks/useAnalyticsAPI';
 import type { AnalyticsFilters } from '../types/analytics';
 
+// Error boundary component for charts
+interface ChartErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+interface ChartErrorBoundaryProps {
+  children: ReactNode;
+  chartName: string;
+}
+
+class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+  constructor(props: ChartErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ChartErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error(`Error in ${this.props.chartName}:`, error, errorInfo);
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: undefined });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="text-center">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {this.props.chartName} Error
+            </h3>
+            <p className="text-gray-500 text-sm mb-4">
+              Unable to render chart data. This might be due to invalid data format.
+            </p>
+            {this.state.error && (
+              <p className="text-gray-400 text-xs mb-4">
+                Error: {this.state.error.message}
+              </p>
+            )}
+            <button
+              onClick={this.handleReset}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Loading skeleton component
+function ChartLoadingSkeleton({ title }: { title: string }) {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="h-64 bg-gray-100 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
 const ReportsPage: React.FC = () => {
   // Filter state
   const [filters, setFilters] = useState<AnalyticsFilters>({
@@ -24,7 +98,7 @@ const ReportsPage: React.FC = () => {
     granularity: 'month',
   });
 
-  // Fetch all analytics data
+  // Fetch all analytics data with error handling
   const { data: monthlyData = [], isLoading: monthlyLoading, error: monthlyError } = useMonthlyAnalytics(filters);
   const { data: categoryData = [], isLoading: categoryLoading, error: categoryError } = useCategoryAnalytics(filters);
   const { data: userData = [], isLoading: userLoading, error: userError } = useUserAnalytics(filters);
@@ -206,12 +280,14 @@ const ReportsPage: React.FC = () => {
             {isLoading ? (
               <ChartLoadingSkeleton title="Monthly Expense Trends" />
             ) : (
-              <MonthlyTrendsChart
-                data={monthlyData}
-                height={400}
-                showComparison={true}
-                onDataPointClick={(data) => handleChartClick('monthly', data)}
-              />
+              <ChartErrorBoundary chartName="Monthly Expense Trends">
+                <MonthlyTrendsChart
+                  data={monthlyData}
+                  height={400}
+                  showComparison={true}
+                  onDataPointClick={(data) => handleChartClick('monthly', data)}
+                />
+              </ChartErrorBoundary>
             )}
           </div>
 
@@ -221,12 +297,14 @@ const ReportsPage: React.FC = () => {
               {isLoading ? (
                 <ChartLoadingSkeleton title="Category Breakdown" />
               ) : (
-                <CategoryBreakdownChart
-                  data={categoryData}
-                  height={450}
-                  showPercentages={true}
-                  onSliceClick={(data) => handleChartClick('category', data)}
-                />
+                <ChartErrorBoundary chartName="Category Breakdown">
+                  <CategoryBreakdownChart
+                    data={categoryData}
+                    height={450}
+                    showPercentages={true}
+                    onSliceClick={(data) => handleChartClick('category', data)}
+                  />
+                </ChartErrorBoundary>
               )}
             </div>
 
@@ -234,12 +312,14 @@ const ReportsPage: React.FC = () => {
               {isLoading ? (
                 <ChartLoadingSkeleton title="User Comparison" />
               ) : (
-                <UserComparisonChart
-                  data={userData}
-                  height={450}
-                  showDifference={true}
-                  onBarClick={(data) => handleChartClick('user', data)}
-                />
+                <ChartErrorBoundary chartName="User Comparison">
+                  <UserComparisonChart
+                    data={userData}
+                    height={450}
+                    showDifference={true}
+                    onBarClick={(data) => handleChartClick('user', data)}
+                  />
+                </ChartErrorBoundary>
               )}
             </div>
           </div>
@@ -249,12 +329,14 @@ const ReportsPage: React.FC = () => {
             {isLoading ? (
               <ChartLoadingSkeleton title="Balance History" />
             ) : (
-              <BalanceHistoryChart
-                data={balanceData}
-                height={400}
-                showSettlements={true}
-                onPointClick={(data) => handleChartClick('balance', data)}
-              />
+              <ChartErrorBoundary chartName="Balance History">
+                <BalanceHistoryChart
+                  data={balanceData}
+                  height={400}
+                  showSettlements={true}
+                  onPointClick={(data) => handleChartClick('balance', data)}
+                />
+              </ChartErrorBoundary>
             )}
           </div>
 
@@ -264,13 +346,15 @@ const ReportsPage: React.FC = () => {
               {isLoading ? (
                 <ChartLoadingSkeleton title="Top Categories" />
               ) : (
-                <TopCategoriesChart
-                  data={categoryData}
-                  height={450}
-                  maxCategories={5}
-                  showTrends={true}
-                  onCategoryClick={(data) => handleChartClick('topCategory', data)}
-                />
+                <ChartErrorBoundary chartName="Top Categories">
+                  <TopCategoriesChart
+                    data={categoryData}
+                    height={450}
+                    maxCategories={5}
+                    showTrends={true}
+                    onCategoryClick={(data) => handleChartClick('topCategory', data)}
+                  />
+                </ChartErrorBoundary>
               )}
             </div>
 
@@ -278,11 +362,13 @@ const ReportsPage: React.FC = () => {
               {isLoading ? (
                 <ChartLoadingSkeleton title="Time Patterns" />
               ) : (
-                <TimePatternChart
-                  data={timePatternData}
-                  height={450}
-                  onCellClick={(data) => handleChartClick('timePattern', data)}
-                />
+                <ChartErrorBoundary chartName="Time Patterns">
+                  <TimePatternChart
+                    data={timePatternData}
+                    height={450}
+                    onCellClick={(data) => handleChartClick('timePattern', data)}
+                  />
+                </ChartErrorBoundary>
               )}
             </div>
           </div>
@@ -291,25 +377,5 @@ const ReportsPage: React.FC = () => {
     </div>
   );
 };
-
-// Loading skeleton component
-function ChartLoadingSkeleton({ title }: { title: string }) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-      </div>
-      <div className="animate-pulse">
-        <div className="h-64 bg-gray-200 rounded-lg"></div>
-        <div className="mt-4 grid grid-cols-4 gap-4">
-          <div className="h-16 bg-gray-100 rounded-lg"></div>
-          <div className="h-16 bg-gray-100 rounded-lg"></div>
-          <div className="h-16 bg-gray-100 rounded-lg"></div>
-          <div className="h-16 bg-gray-100 rounded-lg"></div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default ReportsPage;

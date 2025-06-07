@@ -12,11 +12,58 @@ interface TimePatternChartProps {
   onCellClick?: (data: TimePatternData) => void;
 }
 
+// Helper function to safely convert to number
+function safeNumber(value: any, defaultValue: number = 0): number {
+  if (value === null || value === undefined || value === '') {
+    return defaultValue;
+  }
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
+
+// Helper function to validate data item
+const isValidTimePatternItem = (item: any): boolean => {
+  return item && 
+         typeof item === 'object' && 
+         typeof item.dayOfWeek !== 'undefined' &&
+         typeof item.hour !== 'undefined' &&
+         typeof item.amount !== 'undefined' &&
+         typeof item.count !== 'undefined';
+};
+
 export function TimePatternChart({
   data,
   height = 400,
   onCellClick,
 }: TimePatternChartProps) {
+  // Early return if no data
+  if (!data || !Array.isArray(data)) {
+    return (
+      <BaseChart
+        title="Spending Time Patterns"
+        subtitle="When do you spend the most?"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-gray-500 text-lg mb-2">No time pattern data available</div>
+            <div className="text-gray-400 text-sm">Add some expenses to see patterns</div>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
+
+  // Filter and validate data
+  const validData = data.filter(isValidTimePatternItem).map(item => ({
+    ...item,
+    dayOfWeek: safeNumber(item.dayOfWeek, 0),
+    hour: safeNumber(item.hour, 0),
+    amount: safeNumber(item.amount, 0),
+    count: safeNumber(item.count, 0),
+  }));
+
   // Days of the week
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -46,8 +93,8 @@ export function TimePatternChart({
       });
     });
 
-    // Populate with actual data
-    data.forEach(item => {
+    // Populate with actual data - use validData instead of data
+    validData.forEach(item => {
       const blockIndex = timeBlocks.findIndex(block =>
         item.hour >= block.start && item.hour <= block.end
       );
@@ -55,8 +102,8 @@ export function TimePatternChart({
       if (blockIndex !== -1) {
         const key = `${item.dayOfWeek}-${blockIndex}`;
         if (matrix[key]) {
-          matrix[key].amount += item.amount;
-          matrix[key].count += item.count;
+          matrix[key].amount += safeNumber(item.amount, 0);
+          matrix[key].count += safeNumber(item.count, 0);
         }
       }
     });

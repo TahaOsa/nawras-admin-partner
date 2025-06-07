@@ -165,39 +165,206 @@ app.get('/api/settlements', async (req, res) => {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    res.json(data || []);
+    
+    res.json({ 
+      success: true, 
+      data: data || [] 
+    });
   } catch (error) {
     console.error('Error fetching settlements:', error);
-    res.status(500).json({ error: 'Failed to fetch settlements' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch settlements' 
+    });
   }
 });
 
 // Create new settlement
 app.post('/api/settlements', async (req, res) => {
   try {
-    const { amount, paid_by, paid_to, description, date } = req.body;
+    console.log('Settlement request body:', req.body);
     
+    // Handle both camelCase (frontend) and snake_case (database) formats
+    const { 
+      amount, 
+      paidBy, paid_by, // Accept both formats
+      paidTo, paid_to, // Accept both formats  
+      description, 
+      date 
+    } = req.body;
+    
+    // Use camelCase if provided, fallback to snake_case
+    const paidByValue = paidBy || paid_by;
+    const paidToValue = paidTo || paid_to;
+    
+    // Enhanced validation
+    if (!amount || typeof amount === 'undefined' || amount === null) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Amount is required and must be a valid number' 
+      });
+    }
+    
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Amount must be a positive number' 
+      });
+    }
+    
+    if (parsedAmount > 50000) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Amount cannot exceed $50,000' 
+      });
+    }
+    
+    if (!paidByValue || !paidToValue || !date) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Missing required fields: amount, paidBy, paidTo, date' 
+      });
+    }
+    
+    // Validate users exist
+    const validUsers = ['taha', 'burak'];
+    if (!validUsers.includes(paidByValue) || !validUsers.includes(paidToValue)) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid user IDs. Must be either "taha" or "burak"' 
+      });
+    }
+    
+    // Prevent self-payment
+    if (paidByValue === paidToValue) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Cannot create settlement where payer and recipient are the same person' 
+      });
+    }
+    
+    // Validate date format
+    const settlementDate = new Date(date);
+    if (isNaN(settlementDate.getTime())) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid date format. Please use YYYY-MM-DD format' 
+      });
+    }
+    
+    // Check if date is too far in the past or future
+    const today = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(today.getFullYear() - 1);
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    
+    if (settlementDate > tomorrow) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Settlement date cannot be in the future' 
+      });
+    }
+    
+    if (settlementDate < oneYearAgo) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Settlement date cannot be more than a year ago' 
+      });
+    }
+    
+    // Validate description length
+    const finalDescription = description || '';
+    if (finalDescription.length > 500) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Description cannot exceed 500 characters' 
+      });
+    }
+    
+    // Create settlement with better error handling
     const { data, error } = await supabase
       .from('nawras_settlements')
       .insert({
-        amount,
-        paid_by,
-        paid_to,
-        description,
-        date
+        amount: parsedAmount,
+        paid_by: paidByValue,
+        paid_to: paidToValue,
+        description: finalDescription,
+        date: date
       })
-      .select(`
-        *,
-        paid_by_user:nawras_users!nawras_settlements_paid_by_fkey(*),
-        paid_to_user:nawras_users!nawras_settlements_paid_to_fkey(*)
-      `)
+      .select()
       .single();
     
-    if (error) throw error;
-    res.status(201).json(data);
+    if (error) {
+      console.error('Supabase error creating settlement:', error);
+      
+      // Handle specific Supabase errors
+      if (error.code === '23505') {
+        return res.status(409).json({ 
+          success: false,
+          error: 'A settlement with these details already exists' 
+        });
+      }
+      
+      if (error.code === '23503') {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Invalid user reference in settlement' 
+        });
+      }
+      
+      // Generic database error
+      return res.status(500).json({ 
+        success: false,
+        error: 'Database error occurred while creating settlement' 
+      });
+    }
+    
+    if (!data) {
+      return res.status(500).json({ 
+        success: false,
+        error: 'No data returned after settlement creation' 
+      });
+    }
+    
+    console.log('Settlement created successfully:', data);
+    
+    res.status(201).json({ 
+      success: true,
+      data: {
+        id: data.id,
+        amount: data.amount,
+        paidBy: data.paid_by,
+        paidTo: data.paid_to,
+        description: data.description,
+        date: data.date,
+        createdAt: data.created_at
+      }
+    });
   } catch (error) {
     console.error('Error creating settlement:', error);
-    res.status(500).json({ error: 'Failed to create settlement' });
+    
+    // Handle different types of errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Validation error: ${error.message}` 
+      });
+    }
+    
+    if (error.name === 'TypeError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid data format in request' 
+      });
+    }
+    
+    // Generic server error
+    res.status(500).json({ 
+      success: false, 
+      error: 'An unexpected error occurred while creating the settlement' 
+    });
   }
 });
 
@@ -367,12 +534,14 @@ app.get('/api/analytics/users', async (req, res) => {
     const userData = users.map(user => {
       const userExpenses = expenses.filter(expense => expense.paid_by_id === user.user_id);
       const totalAmount = userExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-      
+      const expenseCount = userExpenses.length;
+      const avgExpense = expenseCount > 0 ? totalAmount / expenseCount : 0;
+
       return {
-        user: user.name,
+        user: user.name || user.user_id,
         totalAmount,
-        expenseCount: userExpenses.length,
-        avgExpense: userExpenses.length > 0 ? totalAmount / userExpenses.length : 0
+        expenseCount,
+        avgExpense: Math.round(avgExpense * 100) / 100
       };
     });
 
@@ -383,136 +552,155 @@ app.get('/api/analytics/users', async (req, res) => {
   }
 });
 
-// Balance history analytics
+// Analytics endpoint - balance history  
 app.get('/api/analytics/balance-history', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    const { data: expenses, error: expensesError } = await supabase
-      .from('nawras_expenses')
-      .select('*')
-      .order('date', { ascending: true });
-    
-    const { data: settlements, error: settlementsError } = await supabase
-      .from('nawras_settlements')
-      .select('*')
-      .order('date', { ascending: true });
-    
-    if (expensesError) throw expensesError;
-    if (settlementsError) throw settlementsError;
+    // Get expenses and settlements in chronological order
+    const [expensesResult, settlementsResult] = await Promise.all([
+      supabase
+        .from('nawras_expenses')
+        .select('*')
+        .order('date', { ascending: true }),
+      supabase
+        .from('nawras_settlements')
+        .select('*')
+        .order('date', { ascending: true })
+    ]);
 
-    // Calculate balance over time
+    if (expensesResult.error) throw expensesResult.error;
+    if (settlementsResult.error) throw settlementsResult.error;
+
+    const expenses = expensesResult.data || [];
+    const settlements = settlementsResult.data || [];
+
+    // Create balance history data
+    const balanceHistory = [];
+    let runningBalance = 0;
+    let cumulativeExpenses = 0;
+    let cumulativeSettlements = 0;
+
+    // Combine and sort all transactions by date
     const allTransactions = [
-      ...(expenses || []).filter(e => safeParseDate(e.date)).map(e => ({ ...e, type: 'expense', date: e.date })),
-      ...(settlements || []).filter(s => safeParseDate(s.date)).map(s => ({ ...s, type: 'settlement', date: s.date }))
-    ].sort((a, b) => {
-      const dateA = safeParseDate(a.date);
-      const dateB = safeParseDate(b.date);
-      if (!dateA || !dateB) return 0;
-      return dateA.getTime() - dateB.getTime();
-    });
+      ...expenses.map(e => ({ ...e, type: 'expense' })),
+      ...settlements.map(s => ({ ...s, type: 'settlement' }))
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    let tahaBalance = 0;
-    let burakBalance = 0;
-    let totalExpenses = 0;
-
-    const balanceHistory = allTransactions.map(transaction => {
+    allTransactions.forEach(transaction => {
+      const amount = Number(transaction.amount) || 0;
+      
       if (transaction.type === 'expense') {
-        totalExpenses += Number(transaction.amount);
-        const eachShare = totalExpenses / 2;
-        
+        // For expenses: if Taha paid, it's negative for balance (Burak owes Taha)
+        // if Burak paid, it's positive for balance (Taha owes Burak)
         if (transaction.paid_by_id === 'taha') {
-          tahaBalance = totalExpenses - (totalExpenses - Number(transaction.amount)) / 2 - eachShare;
+          runningBalance -= amount / 2; // Taha paid, so Burak owes half
         } else {
-          burakBalance = totalExpenses - (totalExpenses - Number(transaction.amount)) / 2 - eachShare;
+          runningBalance += amount / 2; // Burak paid, so Taha owes half
         }
+        cumulativeExpenses += amount;
       } else if (transaction.type === 'settlement') {
+        // For settlements: adjust the balance
         if (transaction.paid_by === 'taha') {
-          tahaBalance -= Number(transaction.amount);
-          burakBalance += Number(transaction.amount);
+          runningBalance += amount; // Taha paid settlement
         } else {
-          burakBalance -= Number(transaction.amount);
-          tahaBalance += Number(transaction.amount);
+          runningBalance -= amount; // Burak paid settlement
         }
+        cumulativeSettlements += amount;
       }
 
-      return {
+      balanceHistory.push({
         date: transaction.date,
-        tahaBalance,
-        burakBalance,
-        totalExpenses,
-        netBalance: tahaBalance - burakBalance
-      };
+        balance: runningBalance, // This is the field the frontend expects
+        runningBalance: runningBalance, // Keep for compatibility 
+        cumulativeExpenses: cumulativeExpenses,
+        settlements: cumulativeSettlements,
+        type: transaction.type,
+        amount: amount,
+        description: transaction.description || 'Transaction'
+      });
     });
 
-    res.json({ success: true, data: balanceHistory });
+    res.json({ 
+      success: true, 
+      data: balanceHistory 
+    });
   } catch (error) {
     console.error('Error fetching balance history:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch balance history' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch balance history' 
+    });
   }
 });
 
-// Time patterns analytics
+// Analytics endpoint - time patterns
 app.get('/api/analytics/time-patterns', async (req, res) => {
   try {
-    const { period = 'all' } = req.query;
+    const { period } = req.query;
     
-    const { data: expenses, error } = await supabase
+    const { data, error } = await supabase
       .from('nawras_expenses')
       .select('*')
       .order('date', { ascending: true });
     
     if (error) throw error;
 
-    // Group by day of week
-    const dayOfWeek = (expenses || []).reduce((acc, expense) => {
-      const date = safeParseDate(expense.date);
-      if (!date) return acc; // Skip invalid dates
-      const day = date.getDay();
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const dayName = dayNames[day];
+    const expenses = data || [];
+    
+    // Create time pattern data with proper structure
+    const timePatterns = [];
+    const dayMap = {
+      'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+      'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    };
+    
+    // Group by day of week and hour
+    const patterns = {};
+    
+    expenses.forEach(expense => {
+      const date = new Date(expense.date);
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const dayOfWeek = dayMap[dayName] || 0;
+      const hour = date.getHours();
+      const amount = Number(expense.amount) || 0;
       
-      if (!acc[dayName]) {
-        acc[dayName] = { day: dayName, dayNumber: day, totalAmount: 0, expenseCount: 0 };
+      const key = `${dayOfWeek}-${hour}`;
+      if (!patterns[key]) {
+        patterns[key] = {
+          dayOfWeek: dayOfWeek,  // Number as expected by frontend
+          hour: hour,
+          amount: 0,
+          count: 0,
+          dayName: dayName,
+          timeSlot: hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening'
+        };
       }
-      acc[dayName].totalAmount += Number(expense.amount);
-      acc[dayName].expenseCount += 1;
-      return acc;
-    }, {});
-
-    // Group by hour (simulated since we don't have time data)
-    const hourlyPattern = Array.from({ length: 24 }, (_, hour) => ({
-      hour,
-      totalAmount: Math.random() * 100, // Simulated data
-      expenseCount: Math.floor(Math.random() * 10)
+      
+      patterns[key].amount += amount;
+      patterns[key].count += 1;
+    });
+    
+    // Convert to array and ensure proper structure
+    const timePatternArray = Object.values(patterns).map(pattern => ({
+      dayOfWeek: pattern.dayOfWeek,
+      hour: pattern.hour,
+      amount: pattern.amount,
+      count: pattern.count,
+      dayName: pattern.dayName,
+      timeSlot: pattern.timeSlot
     }));
 
-    // Group by month
-    const monthlyPattern = (expenses || []).reduce((acc, expense) => {
-      const date = safeParseDate(expense.date);
-      if (!date) return acc; // Skip invalid dates
-      const month = date.getMonth();
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthName = monthNames[month];
-      
-      if (!acc[monthName]) {
-        acc[monthName] = { month: monthName, monthNumber: month, totalAmount: 0, expenseCount: 0 };
-      }
-      acc[monthName].totalAmount += Number(expense.amount);
-      acc[monthName].expenseCount += 1;
-      return acc;
-    }, {});
-
-    const result = {
-      dayOfWeek: Object.values(dayOfWeek),
-      hourly: hourlyPattern,
-      monthly: Object.values(monthlyPattern)
-    };
-
-    res.json({ success: true, data: result });
+    res.json({ 
+      success: true, 
+      data: timePatternArray 
+    });
   } catch (error) {
     console.error('Error fetching time patterns:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch time patterns' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch time patterns' 
+    });
   }
 });
 

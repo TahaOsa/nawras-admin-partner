@@ -7,21 +7,88 @@ import { formatCurrency, formatChartDate } from '../../lib/chartUtils';
 import { chartTheme, getBalanceColor } from '../../lib/chartTheme';
 import type { BalanceHistoryChartProps } from '../../types/charts';
 
+// Helper function to safely convert data
+const safeToFixed = (value: any, decimals: number = 2): number => {
+  if (value === undefined || value === null || isNaN(value)) {
+    return 0;
+  }
+  return Number(Number(value).toFixed(decimals));
+};
+
+// Helper function to validate data item
+const isValidDataItem = (item: any): boolean => {
+  return item && 
+         typeof item === 'object' && 
+         item.date &&
+         typeof item.balance !== 'undefined' &&
+         typeof item.cumulativeExpenses !== 'undefined' &&
+         typeof item.settlements !== 'undefined' &&
+         typeof item.runningBalance !== 'undefined';
+};
+
 export function BalanceHistoryChart({
   data,
   height = 400,
   showSettlements = true,
   onPointClick,
 }: BalanceHistoryChartProps) {
-  // Transform data for chart display
-  const chartData = data.map(item => ({
-    ...item,
-    date: formatChartDate(item.date, 'day'), // Convert to readable date format
-    balance: Number(item.balance.toFixed(2)),
-    cumulativeExpenses: Number(item.cumulativeExpenses.toFixed(2)),
-    settlements: Number(item.settlements.toFixed(2)),
-    runningBalance: Number(item.runningBalance.toFixed(2)),
-  }));
+  // Early return if no data
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <BaseChart
+        title="Balance History"
+        subtitle="Track balance changes over time"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-gray-500 text-lg mb-2">No balance data available</div>
+            <div className="text-gray-400 text-sm">Add some expenses to see the balance history</div>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
+
+  // Filter and transform data for chart display with error handling
+  const chartData = data
+    .filter(isValidDataItem)
+    .map(item => {
+      try {
+        return {
+          ...item,
+          date: formatChartDate(item.date, 'day'), // Convert to readable date format
+          balance: safeToFixed(item.balance),
+          cumulativeExpenses: safeToFixed(item.cumulativeExpenses),
+          settlements: safeToFixed(item.settlements),
+          runningBalance: safeToFixed(item.runningBalance),
+        };
+      } catch (error) {
+        console.warn('Error processing chart data item:', error, item);
+        return null;
+      }
+    })
+    .filter(Boolean); // Remove any null items
+
+  // If no valid data after filtering, show empty state
+  if (chartData.length === 0) {
+    return (
+      <BaseChart
+        title="Balance History"
+        subtitle="Track balance changes over time"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-gray-500 text-lg mb-2">Invalid balance data</div>
+            <div className="text-gray-400 text-sm">Please check your data format</div>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
 
   // Custom tooltip formatter
   const tooltipFormatter = (value: number, name: string) => {
