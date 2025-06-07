@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Debug Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #fee; border: 1px solid #faa; }
+        .success { background: #efe; border: 1px solid #afa; }
+        .loading { background: #fef; border: 1px solid #ffa; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Auth Debug Test</h1>
+    <div id="status" class="log loading">⏳ Testing Supabase connection...</div>
+    <div id="logs"></div>
+
+    <script>
+        const logs = document.getElementById('logs');
+        const status = document.getElementById('status');
+
+        function addLog(message, type = 'log') {
+            console.log(message);
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            logs.appendChild(div);
+        }
+
+        async function testSupabaseAuth() {
+            try {
+                addLog('🔄 Creating Supabase client...');
+                
+                const supabaseUrl = 'https://khsdtnhjvgucpgybadki.supabase.co';
+                const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtoc2R0bmhqdmd1Y3BneWJhZGtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5ODY3NTUsImV4cCI6MjA2NDU2Mjc1NX0.iAp-OtmHThl9v0y42Gt9y-FdKQKucocRx874_LmIwuU';
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+                addLog('✅ Supabase client created successfully', 'success');
+
+                addLog('🔄 Testing getSession...');
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    addLog(`❌ Error getting session: ${error.message}`, 'error');
+                    status.innerHTML = '❌ Authentication test failed';
+                    status.className = 'log error';
+                } else {
+                    addLog(`✅ Session check completed: ${session ? 'Session found' : 'No session'}`, 'success');
+                    status.innerHTML = '✅ Authentication test completed successfully';
+                    status.className = 'log success';
+                }
+
+                addLog('🔄 Testing API connectivity...');
+                const { data, error: apiError } = await supabase.from('users').select('count').limit(1);
+                
+                if (apiError) {
+                    addLog(`⚠️ API test failed: ${apiError.message}`, 'error');
+                } else {
+                    addLog('✅ API connectivity test passed', 'success');
+                }
+
+            } catch (error) {
+                addLog(`💥 Unexpected error: ${error.message}`, 'error');
+                status.innerHTML = '💥 Unexpected error occurred';
+                status.className = 'log error';
+            }
+        }
+
+        // Start the test
+        testSupabaseAuth();
+    </script>
+</body>
+</html> 

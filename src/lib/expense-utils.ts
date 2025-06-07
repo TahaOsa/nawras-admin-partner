@@ -1,4 +1,5 @@
 // Utility functions for expense calculations and formatting
+import { parseISO, isValid } from 'date-fns';
 import type {
   Expense,
   BalanceCalculation,
@@ -6,6 +7,21 @@ import type {
   CategoryBreakdown
 } from '../types';
 import { UserId } from '../types';
+
+// Helper function to safely parse dates
+function safeParseDate(dateString: string): Date | null {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  try {
+    const date = parseISO(dateString);
+    return isValid(date) ? date : null;
+  } catch (error) {
+    console.warn('Invalid date string:', dateString, error);
+    return null;
+  }
+}
 
 /**
  * Calculate balance between partners based on 50/50 expense splitting
@@ -73,8 +89,13 @@ export function getExpenseSummary(expenses: Expense[], userId: string): ExpenseS
 
   const lastExpenseDate = userExpenses.length > 0
     ? userExpenses
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
-        .date
+        .filter(expense => safeParseDate(expense.date)) // Filter out invalid dates
+        .sort((a, b) => {
+          const dateA = safeParseDate(a.date);
+          const dateB = safeParseDate(b.date);
+          if (!dateA || !dateB) return 0;
+          return dateB.getTime() - dateA.getTime();
+        })[0]?.date
     : undefined;
 
   return {
@@ -125,7 +146,14 @@ export function formatCurrency(amount: number, currency: string = 'USD'): string
  * Format date for display
  */
 export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  const date = safeParseDate(dateString);
+  
+  if (!date) {
+    console.warn('Invalid date for formatting:', dateString);
+    return 'Invalid Date';
+  }
+  
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -137,6 +165,12 @@ export function formatDate(dateString: string): string {
  */
 export function getRecentExpenses(expenses: Expense[], limit: number = 5): Expense[] {
   return expenses
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .filter(expense => safeParseDate(expense.date)) // Filter out invalid dates
+    .sort((a, b) => {
+      const dateA = safeParseDate(a.date);
+      const dateB = safeParseDate(b.date);
+      if (!dateA || !dateB) return 0;
+      return dateB.getTime() - dateA.getTime();
+    })
     .slice(0, limit);
 }

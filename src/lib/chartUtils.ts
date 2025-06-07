@@ -1,6 +1,6 @@
 // Chart utility functions and helpers
 
-import { format, parseISO, subMonths } from 'date-fns';
+import { format, parseISO, subMonths, isValid } from 'date-fns';
 import type { Expense } from '../types';
 import type {
   MonthlyData,
@@ -9,6 +9,33 @@ import type {
   BalanceHistoryData
 } from '../types/analytics';
 import { getCategoryColor } from './chartTheme';
+
+// Helper function to safely parse dates and filter out invalid ones
+function safeParseDate(dateString: string): Date | null {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  try {
+    const date = parseISO(dateString);
+    return isValid(date) ? date : null;
+  } catch (error) {
+    console.warn('Invalid date string:', dateString, error);
+    return null;
+  }
+}
+
+// Helper function to filter expenses with valid dates
+function filterValidExpenses(expenses: Expense[]): Expense[] {
+  return expenses.filter(expense => {
+    const date = safeParseDate(expense.date);
+    if (!date) {
+      console.warn('Filtering out expense with invalid date:', expense.id, expense.date);
+      return false;
+    }
+    return true;
+  });
+}
 
 // Format currency for chart display
 export const formatCurrency = (amount: number): string => {
@@ -27,7 +54,12 @@ export const formatPercentage = (value: number): string => {
 
 // Format date for chart labels
 export const formatChartDate = (date: string, format_type: 'month' | 'day' | 'year' = 'month'): string => {
-  const parsedDate = parseISO(date);
+  const parsedDate = safeParseDate(date);
+  
+  if (!parsedDate) {
+    console.warn('Invalid date for chart formatting:', date);
+    return 'Invalid Date';
+  }
 
   switch (format_type) {
     case 'month':
@@ -43,11 +75,16 @@ export const formatChartDate = (date: string, format_type: 'month' | 'day' | 'ye
 
 // Process expenses into monthly data
 export const processMonthlyData = (expenses: Expense[]): MonthlyData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
   // Group expenses by month
-  const monthlyGroups = expenses.reduce((acc, expense) => {
-    const monthKey = format(parseISO(expense.date), 'yyyy-MM');
+  const monthlyGroups = validExpenses.reduce((acc, expense) => {
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
+    const monthKey = format(date, 'yyyy-MM');
 
     if (!acc[monthKey]) {
       acc[monthKey] = {
@@ -122,13 +159,18 @@ export const processUserComparisonData = (
   expenses: Expense[],
   granularity: 'month' | 'week' = 'month'
 ): UserComparisonData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
   const formatKey = granularity === 'month' ? 'yyyy-MM' : 'yyyy-[W]ww';
 
   // Group by time period
-  const periodGroups = expenses.reduce((acc, expense) => {
-    const periodKey = format(parseISO(expense.date), formatKey);
+  const periodGroups = validExpenses.reduce((acc, expense) => {
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
+    const periodKey = format(date, formatKey);
 
     if (!acc[periodKey]) {
       acc[periodKey] = {
@@ -166,13 +208,20 @@ export const processBalanceHistory = (
   expenses: Expense[],
   settlements: any[] = []
 ): BalanceHistoryData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
   // Combine and sort all transactions by date
   const allTransactions = [
-    ...expenses.map(e => ({ ...e, type: 'expense' })),
-    ...settlements.map(s => ({ ...s, type: 'settlement' })),
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ...validExpenses.map(e => ({ ...e, type: 'expense' })),
+    ...settlements.filter(s => safeParseDate(s.date)).map(s => ({ ...s, type: 'settlement' })),
+  ].sort((a, b) => {
+    const dateA = safeParseDate(a.date);
+    const dateB = safeParseDate(b.date);
+    if (!dateA || !dateB) return 0;
+    return dateA.getTime() - dateB.getTime();
+  });
 
   let tahaTotalPaid = 0;
   let burakTotalPaid = 0;

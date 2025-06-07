@@ -134,9 +134,9 @@ const HomePage: React.FC = () => {
                             try {
                               const date = new Date(expense.date);
                               return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
                               });
                             } catch (error) {
                               return 'Invalid Date';

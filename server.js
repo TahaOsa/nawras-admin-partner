@@ -4,6 +4,21 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 
+// Helper function to safely parse dates
+function safeParseDate(dateString) {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  } catch (error) {
+    console.warn('Invalid date string:', dateString, error);
+    return null;
+  }
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -222,7 +237,9 @@ app.get('/api/dashboard', async (req, res) => {
 
     // Monthly expenses (last 6 months)
     const monthlyExpenses = expenses.reduce((acc, expense) => {
-      const month = new Date(expense.date).toISOString().slice(0, 7);
+      const date = safeParseDate(expense.date);
+      if (!date) return acc; // Skip invalid dates
+      const month = date.toISOString().slice(0, 7);
       acc[month] = (acc[month] || 0) + Number(expense.amount);
       return acc;
     }, {});
@@ -287,7 +304,9 @@ app.get('/api/analytics/monthly', async (req, res) => {
 
     // Group by month
     const monthlyData = (expenses || []).reduce((acc, expense) => {
-      const month = new Date(expense.date).toISOString().slice(0, 7);
+      const date = safeParseDate(expense.date);
+      if (!date) return acc; // Skip invalid dates
+      const month = date.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { period: month, totalAmount: 0, expenseCount: 0 };
       }
@@ -384,9 +403,14 @@ app.get('/api/analytics/balance-history', async (req, res) => {
 
     // Calculate balance over time
     const allTransactions = [
-      ...(expenses || []).map(e => ({ ...e, type: 'expense', date: e.date })),
-      ...(settlements || []).map(s => ({ ...s, type: 'settlement', date: s.date }))
-    ].sort((a, b) => new Date(a.date) - new Date(b.date));
+      ...(expenses || []).filter(e => safeParseDate(e.date)).map(e => ({ ...e, type: 'expense', date: e.date })),
+      ...(settlements || []).filter(s => safeParseDate(s.date)).map(s => ({ ...s, type: 'settlement', date: s.date }))
+    ].sort((a, b) => {
+      const dateA = safeParseDate(a.date);
+      const dateB = safeParseDate(b.date);
+      if (!dateA || !dateB) return 0;
+      return dateA.getTime() - dateB.getTime();
+    });
 
     let tahaBalance = 0;
     let burakBalance = 0;
@@ -442,7 +466,9 @@ app.get('/api/analytics/time-patterns', async (req, res) => {
 
     // Group by day of week
     const dayOfWeek = (expenses || []).reduce((acc, expense) => {
-      const day = new Date(expense.date).getDay();
+      const date = safeParseDate(expense.date);
+      if (!date) return acc; // Skip invalid dates
+      const day = date.getDay();
       const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const dayName = dayNames[day];
       
@@ -463,7 +489,9 @@ app.get('/api/analytics/time-patterns', async (req, res) => {
 
     // Group by month
     const monthlyPattern = (expenses || []).reduce((acc, expense) => {
-      const month = new Date(expense.date).getMonth();
+      const date = safeParseDate(expense.date);
+      if (!date) return acc; // Skip invalid dates
+      const month = date.getMonth();
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthName = monthNames[month];
       

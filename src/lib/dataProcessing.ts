@@ -1,6 +1,6 @@
 // Advanced data processing functions for charts and analytics
 
-import { format, parseISO, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, subDays, isValid } from 'date-fns';
 import type { Expense } from '../types';
 import type {
   MonthlyData,
@@ -11,12 +11,40 @@ import type {
   AnalyticsFilters
 } from '../types/analytics';
 
+// Helper function to safely parse dates and filter out invalid ones
+function safeParseDate(dateString: string): Date | null {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+
+  try {
+    const date = parseISO(dateString);
+    return isValid(date) ? date : null;
+  } catch (error) {
+    console.warn('Invalid date string:', dateString, error);
+    return null;
+  }
+}
+
+// Helper function to filter expenses with valid dates
+function filterValidExpenses(expenses: Expense[]): Expense[] {
+  return expenses.filter(expense => {
+    const date = safeParseDate(expense.date);
+    if (!date) {
+      console.warn('Filtering out expense with invalid date:', expense.id, expense.date);
+      return false;
+    }
+    return true;
+  });
+}
+
 // Advanced monthly data processing with trends
 export const processAdvancedMonthlyData = (
   expenses: Expense[],
   filters?: AnalyticsFilters
 ): MonthlyData[] => {
-  let filteredExpenses = expenses;
+  // Filter out expenses with invalid dates first
+  let filteredExpenses = filterValidExpenses(expenses);
 
   // Apply filters
   if (filters) {
@@ -36,7 +64,10 @@ export const processAdvancedMonthlyData = (
 
   // Group by month and calculate metrics
   const monthlyGroups = filteredExpenses.reduce((acc, expense) => {
-    const monthKey = format(parseISO(expense.date), 'yyyy-MM');
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
+    const monthKey = format(date, 'yyyy-MM');
 
     if (!acc[monthKey]) {
       acc[monthKey] = {
@@ -75,13 +106,18 @@ export const processUserComparisonData = (
   expenses: Expense[],
   granularity: 'month' | 'week' = 'month'
 ): UserComparisonData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
   const formatKey = granularity === 'month' ? 'yyyy-MM' : 'yyyy-[W]ww';
 
   // Group by time period
-  const periodGroups = expenses.reduce((acc, expense) => {
-    const periodKey = format(parseISO(expense.date), formatKey);
+  const periodGroups = validExpenses.reduce((acc, expense) => {
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
+    const periodKey = format(date, formatKey);
 
     if (!acc[periodKey]) {
       acc[periodKey] = {
@@ -119,13 +155,20 @@ export const processBalanceHistory = (
   expenses: Expense[],
   settlements: any[] = []
 ): BalanceHistoryData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
   // Combine and sort all transactions by date
   const allTransactions = [
-    ...expenses.map(e => ({ ...e, type: 'expense' })),
-    ...settlements.map(s => ({ ...s, type: 'settlement' })),
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ...validExpenses.map(e => ({ ...e, type: 'expense' })),
+    ...settlements.filter(s => safeParseDate(s.date)).map(s => ({ ...s, type: 'settlement' })),
+  ].sort((a, b) => {
+    const dateA = safeParseDate(a.date);
+    const dateB = safeParseDate(b.date);
+    if (!dateA || !dateB) return 0;
+    return dateA.getTime() - dateB.getTime();
+  });
 
   let runningBalance = 0;
   let cumulativeExpenses = 0;
@@ -160,12 +203,14 @@ export const processBalanceHistory = (
 export const processAdvancedCategoryData = (
   expenses: Expense[]
 ): CategoryData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
-  const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalAmount = validExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   // Group by category
-  const categoryGroups = expenses.reduce((acc, expense) => {
+  const categoryGroups = validExpenses.reduce((acc, expense) => {
     const category = expense.category;
 
     if (!acc[category]) {
@@ -199,10 +244,14 @@ export const processAdvancedCategoryData = (
 
 // Time pattern analysis
 export const processTimePatternData = (expenses: Expense[]): TimePatternData[] => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
-  const patterns = expenses.reduce((acc, expense) => {
-    const date = parseISO(expense.date);
+  const patterns = validExpenses.reduce((acc, expense) => {
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
     const dayOfWeek = date.getDay();
     const hour = date.getHours();
     const key = `${dayOfWeek}-${hour}`;
@@ -237,10 +286,14 @@ function getTimeSlot(hour: number): string {
 
 // Weekly spending analysis
 export const processWeeklySpendingData = (expenses: Expense[]) => {
-  if (!expenses.length) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
 
-  const weeklyGroups = expenses.reduce((acc, expense) => {
-    const date = parseISO(expense.date);
+  const weeklyGroups = validExpenses.reduce((acc, expense) => {
+    const date = safeParseDate(expense.date);
+    if (!date) return acc; // Skip invalid dates
+    
     const weekStart = startOfWeek(date);
     const weekKey = format(weekStart, 'yyyy-[W]ww');
 
@@ -282,11 +335,16 @@ export const processWeeklySpendingData = (expenses: Expense[]) => {
 
 // Spending velocity analysis (rate of spending over time)
 export const processSpendingVelocity = (expenses: Expense[]) => {
-  if (expenses.length < 2) return [];
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (validExpenses.length < 2) return [];
 
-  const sortedExpenses = [...expenses].sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  const sortedExpenses = [...validExpenses].sort((a, b) => {
+    const dateA = safeParseDate(a.date);
+    const dateB = safeParseDate(b.date);
+    if (!dateA || !dateB) return 0;
+    return dateA.getTime() - dateB.getTime();
+  });
 
   let cumulativeAmount = 0;
   const velocityData = [];
@@ -294,22 +352,31 @@ export const processSpendingVelocity = (expenses: Expense[]) => {
   for (let i = 0; i < sortedExpenses.length; i++) {
     cumulativeAmount += sortedExpenses[i].amount;
 
+    const currentDate = safeParseDate(sortedExpenses[i].date);
+    const startDate = safeParseDate(sortedExpenses[0].date);
+    
+    if (!currentDate || !startDate) continue;
+
     const daysSinceStart = i === 0 ? 1 :
       Math.max(1, Math.ceil(
-        (new Date(sortedExpenses[i].date).getTime() -
-         new Date(sortedExpenses[0].date).getTime()) / (1000 * 60 * 60 * 24)
+        (currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
       ));
+
+    let velocity = 0;
+    if (i > 0) {
+      const prevDate = safeParseDate(sortedExpenses[i-1].date);
+      if (prevDate) {
+        velocity = sortedExpenses[i].amount /
+          Math.max(1, (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+      }
+    }
 
     velocityData.push({
       date: sortedExpenses[i].date,
       cumulativeAmount,
       dailyAverage: cumulativeAmount / daysSinceStart,
       expenseCount: i + 1,
-      velocity: i === 0 ? 0 :
-        (sortedExpenses[i].amount /
-         Math.max(1, (new Date(sortedExpenses[i].date).getTime() -
-                     new Date(sortedExpenses[i-1].date).getTime()) / (1000 * 60 * 60 * 24))
-        ),
+      velocity,
     });
   }
 
@@ -321,15 +388,21 @@ export const processCategoryTrends = (
   expenses: Expense[],
   periodDays: number = 30
 ): any[] => {
+  // Filter out expenses with invalid dates first
+  const validExpenses = filterValidExpenses(expenses);
+  if (!validExpenses.length) return [];
+
   const cutoffDate = subDays(new Date(), periodDays);
 
-  const currentPeriod = expenses.filter(e =>
-    new Date(e.date) >= cutoffDate
-  );
+  const currentPeriod = validExpenses.filter(e => {
+    const expenseDate = safeParseDate(e.date);
+    return expenseDate && expenseDate >= cutoffDate;
+  });
 
-  const previousPeriod = expenses.filter(e => {
-    const expenseDate = new Date(e.date);
-    return expenseDate < cutoffDate &&
+  const previousPeriod = validExpenses.filter(e => {
+    const expenseDate = safeParseDate(e.date);
+    return expenseDate && 
+           expenseDate < cutoffDate &&
            expenseDate >= subDays(cutoffDate, periodDays);
   });
 

@@ -15,34 +15,34 @@ const API_BASE_URL = config.apiBaseUrl;
  */
 export async function fetchSettlements(filters?: { paidBy?: string; paidTo?: string; limit?: number }): Promise<Settlement[]> {
   try {
-    const params = new URLSearchParams();
+  const params = new URLSearchParams();
 
-    if (filters?.paidBy) {
-      params.append('paidBy', filters.paidBy);
-    }
+  if (filters?.paidBy) {
+    params.append('paidBy', filters.paidBy);
+  }
 
-    if (filters?.paidTo) {
-      params.append('paidTo', filters.paidTo);
-    }
+  if (filters?.paidTo) {
+    params.append('paidTo', filters.paidTo);
+  }
 
-    if (filters?.limit) {
-      params.append('limit', filters.limit.toString());
-    }
+  if (filters?.limit) {
+    params.append('limit', filters.limit.toString());
+  }
 
-    const url = `${API_BASE_URL}/api/settlements${params.toString() ? `?${params.toString()}` : ''}`;
+  const url = `${API_BASE_URL}/api/settlements${params.toString() ? `?${params.toString()}` : ''}`;
 
-    const response = await fetch(url);
+  const response = await fetch(url);
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch settlements: ${response.status} ${response.statusText}`);
-    }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch settlements: ${response.status} ${response.statusText}`);
+  }
 
-    const data: SettlementListResponse = await response.json();
+  const data: SettlementListResponse = await response.json();
 
     // Safety check for API response
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to fetch settlements');
-    }
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to fetch settlements');
+  }
 
     // Safety check for data array
     if (!Array.isArray(data.data)) {
@@ -50,7 +50,7 @@ export async function fetchSettlements(filters?: { paidBy?: string; paidTo?: str
       return [];
     }
 
-    return data.data;
+  return data.data;
   } catch (error) {
     console.error('Error fetching settlements:', error);
     

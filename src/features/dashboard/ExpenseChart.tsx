@@ -21,20 +21,20 @@ export const ExpenseChart: React.FC = () => {
 
     expenses.forEach(expense => {
       try {
-        const date = new Date(expense.date);
+      const date = new Date(expense.date);
         if (isNaN(date.getTime())) {
           return; // Skip invalid dates
         }
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-        if (!monthlyData[monthKey]) {
-          monthlyData[monthKey] = { taha: 0, burak: 0 };
-        }
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { taha: 0, burak: 0 };
+      }
 
-        if (expense.paidById === 'taha') {
-          monthlyData[monthKey].taha += expense.amount;
-        } else if (expense.paidById === 'burak') {
-          monthlyData[monthKey].burak += expense.amount;
+      if (expense.paidById === 'taha') {
+        monthlyData[monthKey].taha += expense.amount;
+      } else if (expense.paidById === 'burak') {
+        monthlyData[monthKey].burak += expense.amount;
         }
       } catch (error) {
         // Skip expenses with invalid date formats

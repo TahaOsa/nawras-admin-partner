@@ -34,27 +34,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session with timeout
     const getInitialSession = async () => {
       try {
-        const { session: initialSession, error } = await auth.getCurrentSession();
+        console.log('🔄 Starting authentication check...');
+        
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Authentication timeout after 10 seconds')), 10000);
+        });
+        
+        // Race between auth check and timeout
+        const authPromise = auth.getCurrentSession();
+        const { session: initialSession, error } = await Promise.race([authPromise, timeoutPromise]) as any;
         
         if (error) {
-          console.error('Error getting initial session:', error);
+          console.error('❌ Error getting initial session:', error);
           logError(error.message, { context: 'auth_initial_session' });
         } else {
+          console.log('✅ Initial session result:', initialSession ? 'Session found' : 'No session');
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
         }
       } catch (error: any) {
-        console.error('Unexpected error getting initial session:', error);
+        console.error('💥 Unexpected error getting initial session:', error);
         logError(error, { context: 'auth_initial_session_unexpected' });
+        
+        // If it's a timeout, still allow the app to continue
+        if (error.message.includes('timeout')) {
+          console.log('⚠️ Authentication timed out, continuing without session');
+        }
       } finally {
+        console.log('🏁 Authentication check completed, setting isLoading = false');
         setIsLoading(false);
       }
     };
 
     getInitialSession();
+
+    // Fallback timeout - ensure loading never stays true forever
+    const fallbackTimeout = setTimeout(() => {
+      console.log('⚠️ Fallback timeout triggered - forcing isLoading = false');
+      setIsLoading(false);
+    }, 15000); // 15 seconds maximum
 
     // Listen for auth state changes
     const { data: { subscription } } = auth.onAuthStateChange(
@@ -76,7 +98,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   const signOut = async () => {
