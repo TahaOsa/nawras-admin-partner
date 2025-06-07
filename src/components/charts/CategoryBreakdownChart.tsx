@@ -7,6 +7,15 @@ import { formatCurrency, formatPercentage } from '../../lib/chartUtils';
 import { chartTheme } from '../../lib/chartTheme';
 import type { CategoryBreakdownChartProps } from '../../types/charts';
 
+// Helper function to safely convert to number
+function safeNumber(value: any, defaultValue: number = 0): number {
+  if (value === null || value === undefined || value === '') {
+    return defaultValue;
+  }
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
+
 export function CategoryBreakdownChart({
   data,
   height = 400,
@@ -15,19 +24,63 @@ export function CategoryBreakdownChart({
   outerRadius = 120,
   onSliceClick,
 }: CategoryBreakdownChartProps) {
-  // Transform data for chart display
-  const chartData = data.map(item => ({
-    ...item,
-    amount: Number(item.amount.toFixed(2)),
-    percentage: Number(item.percentage.toFixed(1)),
-  }));
+  // Validate and sanitize input data
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <BaseChart
+        title="Expense Categories"
+        subtitle="Breakdown of spending by category"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">🥧</div>
+            <p className="text-gray-500 text-sm">No categories available</p>
+            <p className="text-gray-400 text-xs">Add some expenses to see breakdown</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
+
+  // Transform data for chart display with proper validation
+  const chartData = data
+    .filter(item => item && item.category && safeNumber(item.amount) > 0) // Filter out invalid items
+    .map(item => ({
+      ...item,
+      amount: safeNumber(item.amount),
+      percentage: safeNumber(item.percentage),
+      category: item.category || 'Unknown',
+      color: item.color || chartTheme.colors.primary[0],
+    }));
+
+  // If no valid data after filtering, show empty state
+  if (chartData.length === 0) {
+    return (
+      <BaseChart
+        title="Expense Categories"
+        subtitle="Breakdown of spending by category"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">🥧</div>
+            <p className="text-gray-500 text-sm">No valid categories</p>
+            <p className="text-gray-400 text-xs">Check your expense data</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
 
   // Custom tooltip formatter
   const tooltipFormatter = (value: number, name: string, props: any) => {
     if (name === 'amount') {
       return [
-        formatCurrency(value),
-        `${props.payload.category} (${formatPercentage(props.payload.percentage)})`
+        formatCurrency(safeNumber(value)),
+        `${props.payload.category} (${formatPercentage(safeNumber(props.payload.percentage))})`
       ];
     }
     return [value, name];
@@ -36,7 +89,8 @@ export function CategoryBreakdownChart({
   // Custom label formatter for pie slices
   const renderLabel = (entry: any) => {
     if (!showPercentages) return '';
-    return entry.percentage > 5 ? `${entry.percentage.toFixed(1)}%` : '';
+    const percentage = safeNumber(entry.percentage);
+    return percentage > 5 ? `${percentage.toFixed(1)}%` : '';
   };
 
   // Handle slice clicks
@@ -58,13 +112,17 @@ export function CategoryBreakdownChart({
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-gray-700">
-              {entry.value} ({formatCurrency(chartData[index]?.amount || 0)})
+              {entry.value} ({formatCurrency(safeNumber(chartData[index]?.amount))})
             </span>
           </div>
         ))}
       </div>
     );
   };
+
+  // Calculate safe totals
+  const totalAmount = chartData.reduce((sum, item) => sum + safeNumber(item.amount), 0);
+  const avgAmount = chartData.length > 0 ? totalAmount / chartData.length : 0;
 
   return (
     <BaseChart
@@ -117,7 +175,7 @@ export function CategoryBreakdownChart({
         <div className="bg-gray-50 rounded-lg p-3">
           <div className="text-sm text-gray-500">Total Amount</div>
           <div className="text-lg font-semibold text-gray-900">
-            {formatCurrency(chartData.reduce((sum, item) => sum + item.amount, 0))}
+            {formatCurrency(totalAmount)}
           </div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
@@ -129,7 +187,7 @@ export function CategoryBreakdownChart({
         <div className="bg-gray-50 rounded-lg p-3">
           <div className="text-sm text-gray-500">Avg per Category</div>
           <div className="text-lg font-semibold text-gray-900">
-            {formatCurrency(chartData.reduce((sum, item) => sum + item.amount, 0) / chartData.length || 0)}
+            {formatCurrency(avgAmount)}
           </div>
         </div>
       </div>

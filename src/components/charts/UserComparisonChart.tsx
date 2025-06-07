@@ -7,6 +7,15 @@ import { formatCurrency, formatChartDate } from '../../lib/chartUtils';
 import { chartTheme, getUserColor } from '../../lib/chartTheme';
 import type { UserComparisonChartProps } from '../../types/charts';
 
+// Helper function to safely convert to number
+function safeNumber(value: any, defaultValue: number = 0): number {
+  if (value === null || value === undefined || value === '') {
+    return defaultValue;
+  }
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
+
 export function UserComparisonChart({
   data,
   height = 400,
@@ -14,19 +23,67 @@ export function UserComparisonChart({
   stackedView = false,
   onBarClick,
 }: UserComparisonChartProps) {
-  // Transform data for chart display
-  const chartData = data.map(item => ({
-    ...item,
-    period: formatChartDate(item.period + '-01', 'month'), // Convert "2024-01" to "Jan 2024"
-    taha: Number(item.taha.toFixed(2)),
-    burak: Number(item.burak.toFixed(2)),
-    difference: Number(item.difference.toFixed(2)),
-    absDifference: Math.abs(Number(item.difference.toFixed(2))),
-  }));
+  // Validate and sanitize input data
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <BaseChart
+        title="User Spending Comparison"
+        subtitle="Compare expenses between Taha and Burak"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">📊</div>
+            <p className="text-gray-500 text-sm">No comparison data available</p>
+            <p className="text-gray-400 text-xs">Add expenses to compare users</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
+
+  // Transform data for chart display with proper validation
+  const chartData = data
+    .filter(item => item && item.period) // Filter out invalid items
+    .map(item => {
+      const taha = safeNumber(item.taha);
+      const burak = safeNumber(item.burak);
+      const difference = safeNumber(item.difference, taha - burak);
+      
+      return {
+        ...item,
+        period: formatChartDate(item.period + '-01', 'month'), // Convert "2024-01" to "Jan 2024"
+        taha,
+        burak,
+        difference,
+        absDifference: Math.abs(difference),
+      };
+    });
+
+  // If no valid data after filtering, show empty state
+  if (chartData.length === 0) {
+    return (
+      <BaseChart
+        title="User Spending Comparison"
+        subtitle="Compare expenses between Taha and Burak"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">📊</div>
+            <p className="text-gray-500 text-sm">No valid comparison data</p>
+            <p className="text-gray-400 text-xs">Check your date formatting</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
 
   // Custom tooltip formatter
   const tooltipFormatter = (value: number, name: string) => {
-    const formattedValue = formatCurrency(value);
+    const formattedValue = formatCurrency(safeNumber(value));
     let displayName = name;
 
     switch (name) {
@@ -53,6 +110,11 @@ export function UserComparisonChart({
       onBarClick(data);
     }
   };
+
+  // Calculate safe totals
+  const tahaTotal = chartData.reduce((sum, item) => sum + safeNumber(item.taha), 0);
+  const burakTotal = chartData.reduce((sum, item) => sum + safeNumber(item.burak), 0);
+  const netDifference = chartData.reduce((sum, item) => sum + safeNumber(item.difference), 0);
 
   return (
     <BaseChart
@@ -85,7 +147,7 @@ export function UserComparisonChart({
             fontSize={chartTheme.fonts.sizes.small}
             fontFamily={chartTheme.fonts.family}
             fill={chartTheme.colors.neutral[6]}
-            tickFormatter={(value) => formatCurrency(value)}
+            tickFormatter={(value) => formatCurrency(safeNumber(value))}
           />
           <Tooltip
             content={<CustomTooltip formatter={tooltipFormatter} />}
@@ -131,19 +193,19 @@ export function UserComparisonChart({
         <div className="bg-blue-50 rounded-lg p-3">
           <div className="text-sm text-blue-600">Taha Total</div>
           <div className="text-lg font-semibold text-blue-900">
-            {formatCurrency(chartData.reduce((sum, item) => sum + item.taha, 0))}
+            {formatCurrency(tahaTotal)}
           </div>
         </div>
         <div className="bg-green-50 rounded-lg p-3">
           <div className="text-sm text-green-600">Burak Total</div>
           <div className="text-lg font-semibold text-green-900">
-            {formatCurrency(chartData.reduce((sum, item) => sum + item.burak, 0))}
+            {formatCurrency(burakTotal)}
           </div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <div className="text-sm text-gray-500">Net Difference</div>
           <div className="text-lg font-semibold text-gray-900">
-            {formatCurrency(chartData.reduce((sum, item) => sum + item.difference, 0))}
+            {formatCurrency(netDifference)}
           </div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">

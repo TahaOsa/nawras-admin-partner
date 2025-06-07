@@ -7,24 +7,75 @@ import { formatCurrency, formatChartDate } from '../../lib/chartUtils';
 import { chartTheme, getUserColor } from '../../lib/chartTheme';
 import type { MonthlyTrendsChartProps } from '../../types/charts';
 
+// Helper function to safely convert to number
+function safeNumber(value: any, defaultValue: number = 0): number {
+  if (value === null || value === undefined || value === '') {
+    return defaultValue;
+  }
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
+
 export function MonthlyTrendsChart({
   data,
   height = 400,
   showComparison = true,
   onDataPointClick,
 }: MonthlyTrendsChartProps) {
-  // Transform data for chart display
-  const chartData = data.map(item => ({
-    ...item,
-    month: formatChartDate(item.month + '-01', 'month'), // Convert "2024-01" to "Jan 2024"
-    totalExpenses: Number(item.totalExpenses.toFixed(2)),
-    tahaExpenses: Number(item.tahaExpenses.toFixed(2)),
-    burakExpenses: Number(item.burakExpenses.toFixed(2)),
-  }));
+  // Validate and sanitize input data
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return (
+      <BaseChart
+        title="Monthly Expense Trends"
+        subtitle="Track spending patterns over time"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">📊</div>
+            <p className="text-gray-500 text-sm">No data available</p>
+            <p className="text-gray-400 text-xs">Add some expenses to see trends</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
+
+  // Transform data for chart display with proper validation
+  const chartData = data
+    .filter(item => item && item.month) // Filter out invalid items
+    .map(item => ({
+      ...item,
+      month: formatChartDate(item.month + '-01', 'month'), // Convert "2024-01" to "Jan 2024"
+      totalExpenses: safeNumber(item.totalExpenses),
+      tahaExpenses: safeNumber(item.tahaExpenses),
+      burakExpenses: safeNumber(item.burakExpenses),
+    }));
+
+  // If no valid data after filtering, show empty state
+  if (chartData.length === 0) {
+    return (
+      <BaseChart
+        title="Monthly Expense Trends"
+        subtitle="Track spending patterns over time"
+        height={height}
+        exportable={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="text-gray-400 mb-2">📊</div>
+            <p className="text-gray-500 text-sm">No valid data available</p>
+            <p className="text-gray-400 text-xs">Check your date formatting</p>
+          </div>
+        </div>
+      </BaseChart>
+    );
+  }
 
   // Custom tooltip formatter
   const tooltipFormatter = (value: number, name: string) => {
-    const formattedValue = formatCurrency(value);
+    const formattedValue = formatCurrency(safeNumber(value));
     const displayName = name === 'totalExpenses' ? 'Total' :
                        name === 'tahaExpenses' ? 'Taha' :
                        name === 'burakExpenses' ? 'Burak' : name;
@@ -69,7 +120,7 @@ export function MonthlyTrendsChart({
             fontSize={chartTheme.fonts.sizes.small}
             fontFamily={chartTheme.fonts.family}
             fill={chartTheme.colors.neutral[6]}
-            tickFormatter={(value) => formatCurrency(value)}
+            tickFormatter={(value) => formatCurrency(safeNumber(value))}
           />
           <Tooltip
             content={<CustomTooltip formatter={tooltipFormatter} />}

@@ -12,10 +12,14 @@
     "start": "node server.js",
     "setup-db": "echo '⚠️  Please run the SQL setup in Supabase dashboard manually - see SETUP-GUIDE.md'",
     "setup": "npm run build",
-    "deploy": "npm run build && git add -A && git commit -m \"Deploy update\" && git push"
+    "deploy": "npm run build && git add -A && git commit -m \"Deploy update\" && git push",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:headed": "playwright test --headed"
   },
   "dependencies": {
-    "@playwright/test": "^1.52.0",
     "@supabase/supabase-js": "^2.49.10",
     "@tanstack/react-query": "^5.0.0",
     "bcryptjs": "^2.4.3",
@@ -31,7 +35,8 @@
     "wouter": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^20.19.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.0.0",
