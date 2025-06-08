@@ -22,8 +22,34 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        arabic: ['Cairo', 'Noto Sans Arabic', 'sans-serif'],
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // RTL support
+    function({ addUtilities }) {
+      addUtilities({
+        '.rtl': {
+          direction: 'rtl',
+        },
+        '.ltr': {
+          direction: 'ltr',
+        },
+        '.rtl .float-left': {
+          float: 'right',
+        },
+        '.rtl .float-right': {
+          float: 'left',
+        },
+        '.rtl .text-left': {
+          'text-align': 'right',
+        },
+        '.rtl .text-right': {
+          'text-align': 'left',
+        },
+      })
+    }
+  ],
 }
+

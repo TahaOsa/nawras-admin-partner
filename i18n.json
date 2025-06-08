@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "sourceLanguage": "en",
+  "targetLanguages": ["ar"],
+  "extractionPatterns": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!node_modules/**"
+  ],
+  "outputDir": "src/locales",
+  "keyStructure": "nested",
+  "pluralization": true,
+  "contextSeparator": "_",
+  "features": {
+    "autoExtraction": true,
+    "rtlSupport": true,
+    "currencyLocalization": true,
+    "dateLocalization": true
+  },
+  "apiKey": "api_wj7m2n0epvpjqfnv7mchkgde",
+  "include": [
+    "**/*.tsx",
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ]
+} 

@@ -19,7 +19,7 @@ export interface UserSettings {
   
   // App preferences
   theme: 'light' | 'dark' | 'system';
-  language: 'en' | 'tr';
+  language: 'en' | 'tr' | 'ar';
   defaultExpenseCategory: string;
   autoSaveExpenses: boolean;
   showDecimalPlaces: boolean;
@@ -96,6 +96,7 @@ export const DATE_FORMAT_OPTIONS = [
 export const LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
   { value: 'tr', label: 'Türkçe' },
+  { value: 'ar', label: 'العربية' },
 ] as const;
 
 // Theme options

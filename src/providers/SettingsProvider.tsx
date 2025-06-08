@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { UserSettings, SettingsContextType } from '../types';
 import { DEFAULT_SETTINGS } from '../types';
+import { useTranslation } from 'react-i18next';
 
 // Create the settings context
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -14,6 +15,8 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
+  const { i18n } = useTranslation();
+  
   const [settings, setSettings] = useState<UserSettings>(() => {
     // Load settings from localStorage on initialization
     try {
@@ -37,6 +40,18 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       console.error('Failed to save settings to localStorage:', error);
     }
   }, [settings]);
+
+  // Sync language changes with i18n
+  useEffect(() => {
+    if (settings.language !== i18n.language) {
+      i18n.changeLanguage(settings.language);
+    }
+  }, [settings.language, i18n]);
+
+  // Initialize i18n language from settings
+  useEffect(() => {
+    i18n.changeLanguage(settings.language);
+  }, []);
 
   // Update settings function
   const updateSettings = (updates: Partial<UserSettings>) => {

@@ -3,6 +3,7 @@
 import { useState, Component } from 'react';
 import type { ReactNode } from 'react';
 import { Calendar, Download, TrendingUp, PieChart, BarChart3, DollarSign } from 'lucide-react';
+import { useCommonTranslation } from '../hooks/useI18n';
 import { MonthlyTrendsChart } from '../components/charts/MonthlyTrendsChart';
 import { CategoryBreakdownChart } from '../components/charts/CategoryBreakdownChart';
 import { UserComparisonChart } from '../components/charts/UserComparisonChart';
@@ -92,6 +93,8 @@ function ChartLoadingSkeleton({ title }: { title: string }) {
 }
 
 const ReportsPage: React.FC = () => {
+  const { t } = useCommonTranslation();
+  
   // Filter state
   const [filters, setFilters] = useState<AnalyticsFilters>({
     period: 'all',
@@ -111,11 +114,11 @@ const ReportsPage: React.FC = () => {
 
   // Period filter options
   const periodOptions = [
-    { value: '1month', label: '1 Month' },
-    { value: '3months', label: '3 Months' },
-    { value: '6months', label: '6 Months' },
-    { value: '1year', label: '1 Year' },
-    { value: 'all', label: 'All Time' },
+    { value: '1month', label: t('pages.analyticsReports.oneMonth') },
+    { value: '3months', label: t('pages.analyticsReports.threeMonths') },
+    { value: '6months', label: t('pages.analyticsReports.sixMonths') },
+    { value: '1year', label: t('pages.analyticsReports.oneYear') },
+    { value: 'all', label: t('pages.analyticsReports.allTime') },
   ];
 
   const updatePeriod = (period: string) => {
@@ -147,16 +150,16 @@ const ReportsPage: React.FC = () => {
                 <TrendingUp className="h-6 w-6 text-red-600" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Failed to load reports
+                {t('pages.analyticsReports.failedToLoad')}
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                {error instanceof Error ? error.message : 'An error occurred while loading report data'}
+                {error instanceof Error ? error.message : t('pages.analyticsReports.errorMessage')}
               </p>
               <button
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
               >
-                Try again
+                {t('pages.analyticsReports.tryAgain')}
               </button>
             </div>
           </div>
@@ -172,9 +175,9 @@ const ReportsPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Analytics Reports</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('pages.analyticsReports.title')}</h1>
               <p className="text-sm text-gray-500 mt-1">
-                Comprehensive insights into your expense patterns and trends
+                {t('pages.analyticsReports.subtitle')}
               </p>
             </div>
 
@@ -198,10 +201,10 @@ const ReportsPage: React.FC = () => {
               {/* Export Button */}
               <button
                 onClick={handleExport}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {t('pages.analyticsReports.export')}
               </button>
             </div>
           </div>

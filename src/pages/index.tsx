@@ -7,9 +7,12 @@ import { useExpenses } from '../hooks';
 import { formatCurrency } from '../lib';
 import { EditExpenseModal, DeleteExpenseModal, QuickSearch, DashboardCharts } from '../components';
 import { BalanceSummary } from '../features/dashboard';
+import { useCommonTranslation } from '../hooks/useI18n';
 import type { Expense, ExpenseFilters } from '../types';
 
 const HomePage: React.FC = () => {
+  const { t } = useCommonTranslation();
+
   // Filter state for recent expenses
   const [recentExpensesFilters, setRecentExpensesFilters] = useState<ExpenseFilters>({
     limit: 4,
@@ -38,16 +41,16 @@ const HomePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8">
           <div className="mb-4 sm:mb-0">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Dashboard
+              {t('dashboard.title')}
             </h1>
             <p className="text-gray-600 mt-1">
-              Welcome back! Here's your expense overview.
+              {t('dashboard.welcomeBack')}
             </p>
           </div>
           <Link href="/add-expense">
             <a className="inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
               <Plus className="h-4 w-4 mr-2" />
-              Add Expense
+              {t('dashboard.addExpense')}
             </a>
           </Link>
         </div>
@@ -60,9 +63,9 @@ const HomePage: React.FC = () => {
           {/* Recent Expenses */}
           <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Recent Expenses</h2>
+              <h2 className="text-lg font-semibold text-gray-800">{t('dashboard.recentExpenses')}</h2>
               <Link href="/history">
-                <a className="text-sm text-blue-600 hover:text-blue-700">View all</a>
+                <a className="text-sm text-blue-600 hover:text-blue-700">{t('dashboard.viewAll')}</a>
               </Link>
             </div>
 
@@ -76,7 +79,7 @@ const HomePage: React.FC = () => {
                   sortBy: 'date',
                   sortOrder: 'desc'
                 })}
-                placeholder="Search recent expenses..."
+                placeholder={t('dashboard.searchExpenses')}
                 showQuickFilters={true}
               />
             </div>
@@ -99,7 +102,7 @@ const HomePage: React.FC = () => {
                   <div className="h-12 w-12 bg-red-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <span className="text-red-500 text-xl">⚠️</span>
                   </div>
-                  <p className="text-red-600 mb-3">Failed to load expenses</p>
+                  <p className="text-red-600 mb-3">{t('dashboard.failedToLoad')}</p>
                   <p className="text-gray-500 text-sm">{error.message}</p>
                 </div>
               ) : recentExpenses.length === 0 ? (
@@ -107,10 +110,10 @@ const HomePage: React.FC = () => {
                   <div className="h-12 w-12 bg-gray-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
                     <Plus className="h-6 w-6 text-gray-400" />
                   </div>
-                  <p className="text-gray-500 mb-3">No expenses found</p>
+                  <p className="text-gray-500 mb-3">{t('dashboard.noExpenses')}</p>
                   <Link href="/add-expense">
                     <a className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                      Add your first expense
+                      {t('dashboard.addFirstExpense')}
                     </a>
                   </Link>
                 </div>
@@ -133,13 +136,13 @@ const HomePage: React.FC = () => {
                           {expense.category} • {(() => {
                             try {
                               const date = new Date(expense.date);
-                              return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US', {
+                              return isNaN(date.getTime()) ? t('dashboard.invalidDate') : date.toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'
                               });
                             } catch (error) {
-                              return 'Invalid Date';
+                              return t('dashboard.invalidDate');
                             }
                           })()}
                         </p>
@@ -152,14 +155,14 @@ const HomePage: React.FC = () => {
                           <button
                             onClick={() => setEditingExpense(expense)}
                             className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="Edit expense"
+                            title={t('dashboard.editExpense')}
                           >
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => setDeletingExpense(expense)}
                             className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="Delete expense"
+                            title={t('dashboard.deleteExpense')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -171,7 +174,7 @@ const HomePage: React.FC = () => {
                     <div className="text-center pt-2">
                       <Link href="/history">
                         <a className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                          View {allExpenses.length - recentExpenses.length} more expenses
+                          {t('dashboard.viewMore', { count: allExpenses.length - recentExpenses.length })}
                         </a>
                       </Link>
                     </div>
@@ -183,24 +186,24 @@ const HomePage: React.FC = () => {
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('dashboard.quickActions')}</h2>
             <div className="space-y-3">
               <Link href="/add-expense">
                 <a className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                   <Plus className="h-5 w-5 text-blue-600 mr-3" />
-                  <span className="text-sm font-medium text-gray-700">Add Expense</span>
+                  <span className="text-sm font-medium text-gray-700">{t('dashboard.addExpense')}</span>
                 </a>
               </Link>
               <Link href="/settlement">
                 <a className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                   <Calendar className="h-5 w-5 text-green-600 mr-3" />
-                  <span className="text-sm font-medium text-gray-700">Settle Balance</span>
+                  <span className="text-sm font-medium text-gray-700">{t('dashboard.settleBalance')}</span>
                 </a>
               </Link>
               <Link href="/reports">
                 <a className="flex items-center p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                   <TrendingUp className="h-5 w-5 text-purple-600 mr-3" />
-                  <span className="text-sm font-medium text-gray-700">View Reports</span>
+                  <span className="text-sm font-medium text-gray-700">{t('dashboard.viewReports')}</span>
                 </a>
               </Link>
             </div>

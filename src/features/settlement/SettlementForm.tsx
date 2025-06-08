@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Save, X, DollarSign, Users, Calendar, MessageSquare } from 'lucide-react';
 import { useCreateSettlement } from '../../hooks/useSettlements';
+import { useCommonTranslation } from '../../hooks/useI18n';
 import { UserId } from '../../types';
 import type { CreateSettlementRequest } from '../../types';
 
@@ -22,6 +23,7 @@ interface FormErrors {
 }
 
 const SettlementForm: React.FC = () => {
+  const { t } = useCommonTranslation();
   const [, setLocation] = useLocation();
   const createSettlementMutation = useCreateSettlement();
 
@@ -44,37 +46,37 @@ const SettlementForm: React.FC = () => {
     // Amount validation
     const amount = parseFloat(formData.amount);
     if (!formData.amount.trim()) {
-      newErrors.amount = 'Amount is required';
+      newErrors.amount = t('pages.recordSettlement.validation.amountRequired');
     } else if (isNaN(amount) || amount <= 0) {
-      newErrors.amount = 'Amount must be a positive number';
+      newErrors.amount = t('pages.recordSettlement.validation.amountPositive');
     } else if (amount > 10000) {
-      newErrors.amount = 'Amount cannot exceed $10,000';
+      newErrors.amount = t('pages.recordSettlement.validation.amountLimit');
     }
 
     // Paid by validation
     if (!formData.paidBy) {
-      newErrors.paidBy = 'Please select who is making the payment';
+      newErrors.paidBy = t('pages.recordSettlement.validation.payerRequired');
     }
 
     // Paid to validation
     if (!formData.paidTo) {
-      newErrors.paidTo = 'Please select who is receiving the payment';
+      newErrors.paidTo = t('pages.recordSettlement.validation.receiverRequired');
     }
 
     // Same person validation
     if (formData.paidBy && formData.paidTo && formData.paidBy === formData.paidTo) {
-      newErrors.paidBy = 'Payer and recipient cannot be the same person';
-      newErrors.paidTo = 'Payer and recipient cannot be the same person';
+      newErrors.paidBy = t('pages.recordSettlement.validation.samePerson');
+      newErrors.paidTo = t('pages.recordSettlement.validation.samePerson');
     }
 
     // Description validation (optional but with length limit)
     if (formData.description.trim().length > 200) {
-      newErrors.description = 'Description cannot exceed 200 characters';
+      newErrors.description = t('pages.recordSettlement.validation.descriptionLimit');
     }
 
     // Date validation
     if (!formData.date) {
-      newErrors.date = 'Date is required';
+      newErrors.date = t('pages.recordSettlement.validation.dateRequired');
     } else {
       const selectedDate = new Date(formData.date);
       const today = new Date();
@@ -82,9 +84,9 @@ const SettlementForm: React.FC = () => {
       oneYearAgo.setFullYear(today.getFullYear() - 1);
 
       if (selectedDate > today) {
-        newErrors.date = 'Date cannot be in the future';
+        newErrors.date = t('pages.recordSettlement.validation.dateNotFuture');
       } else if (selectedDate < oneYearAgo) {
-        newErrors.date = 'Date cannot be more than a year ago';
+        newErrors.date = t('pages.recordSettlement.validation.dateNotTooOld');
       }
     }
 
@@ -151,7 +153,7 @@ const SettlementForm: React.FC = () => {
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
               <DollarSign className="inline h-4 w-4 mr-1" />
-              Settlement Amount
+              {t('pages.recordSettlement.settlementAmount')}
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -178,7 +180,7 @@ const SettlementForm: React.FC = () => {
           <div>
             <label htmlFor="paidBy" className="block text-sm font-medium text-gray-700 mb-2">
               <Users className="inline h-4 w-4 mr-1" />
-              Who is Paying
+              {t('pages.recordSettlement.whoIsPaying')}
             </label>
             <select
               id="paidBy"
@@ -188,7 +190,7 @@ const SettlementForm: React.FC = () => {
                 errors.paidBy ? 'border-red-300' : 'border-gray-300'
               }`}
             >
-              <option value="">Select who is making the payment</option>
+              <option value="">{t('pages.recordSettlement.selectPayer')}</option>
               <option value={UserId.TAHA}>Taha</option>
               <option value={UserId.BURAK}>Burak</option>
             </select>
@@ -201,7 +203,7 @@ const SettlementForm: React.FC = () => {
           <div>
             <label htmlFor="paidTo" className="block text-sm font-medium text-gray-700 mb-2">
               <Users className="inline h-4 w-4 mr-1" />
-              Who is Receiving
+              {t('pages.recordSettlement.whoIsReceiving')}
             </label>
             <select
               id="paidTo"
@@ -211,7 +213,7 @@ const SettlementForm: React.FC = () => {
                 errors.paidTo ? 'border-red-300' : 'border-gray-300'
               }`}
             >
-              <option value="">Select who is receiving the payment</option>
+              <option value="">{t('pages.recordSettlement.selectReceiver')}</option>
               <option value={UserId.TAHA}>Taha</option>
               <option value={UserId.BURAK}>Burak</option>
             </select>
@@ -224,12 +226,12 @@ const SettlementForm: React.FC = () => {
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
               <MessageSquare className="inline h-4 w-4 mr-1" />
-              Description (Optional)
+              {t('pages.recordSettlement.description')}
             </label>
             <textarea
               id="description"
               rows={3}
-              placeholder="What is this settlement for? (optional)"
+              placeholder={t('pages.recordSettlement.placeholder')}
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -241,9 +243,9 @@ const SettlementForm: React.FC = () => {
               {errors.description ? (
                 <p className="text-sm text-red-600">{errors.description}</p>
               ) : (
-                <p className="text-sm text-gray-500">Brief description of the settlement</p>
+                <span className="text-sm text-gray-500">Brief description of the settlement</span>
               )}
-              <p className="text-sm text-gray-400">{formData.description.length}/200</p>
+              <span className="text-sm text-gray-400">{formData.description.length}/200</span>
             </div>
           </div>
 
@@ -251,7 +253,7 @@ const SettlementForm: React.FC = () => {
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar className="inline h-4 w-4 mr-1" />
-              Settlement Date
+              {t('pages.recordSettlement.settlementDate')}
             </label>
             <input
               type="date"
@@ -266,47 +268,40 @@ const SettlementForm: React.FC = () => {
               <p className="mt-1 text-sm text-red-600">{errors.date}</p>
             )}
           </div>
-
-          {/* Mutation Error */}
-          {createSettlementMutation.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm">
-                Failed to create settlement: {createSettlementMutation.error.message}
-              </p>
-            </div>
-          )}
-
-          {/* Form Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting || createSettlementMutation.isPending}
-              className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting || createSettlementMutation.isPending ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Record Settlement
-                </>
-              )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isSubmitting || createSettlementMutation.isPending}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <X className="h-4 w-4 mr-2 inline" />
-              Cancel
-            </button>
-          </div>
         </div>
+
+        {/* Form Actions */}
+        <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <X className="inline h-4 w-4 mr-2" />
+            {t('pages.recordSettlement.cancel')}
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Save className="inline h-4 w-4 mr-2" />
+            {isSubmitting ? t('buttons.saving') : t('pages.recordSettlement.recordSettlement')}
+          </button>
+        </div>
+
+        {/* Error Display */}
+        {createSettlementMutation.error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">
+              {createSettlementMutation.error instanceof Error 
+                ? createSettlementMutation.error.message 
+                : 'Failed to create settlement. Please try again.'}
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );

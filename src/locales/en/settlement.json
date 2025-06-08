@@ -1,0 +1,40 @@
+{
+  "form": {
+    "title": "Record Settlement",
+    "subtitle": "Track payments between users",
+    "amountLabel": "Settlement Amount",
+    "amountPlaceholder": "0.00",
+    "paidByLabel": "Who is Paying",
+    "paidByPlaceholder": "Select who is making the payment",
+    "paidToLabel": "Who is Receiving", 
+    "paidToPlaceholder": "Select who is receiving the payment",
+    "descriptionLabel": "Description (Optional)",
+    "descriptionPlaceholder": "What is this settlement for? (optional)",
+    "descriptionHelper": "Brief description of the settlement",
+    "dateLabel": "Settlement Date",
+    "recordSettlement": "Record Settlement",
+    "errors": {
+      "amountRequired": "Settlement amount is required",
+      "amountInvalid": "Please enter a valid amount",
+      "paidByRequired": "Please select who is paying",
+      "paidToRequired": "Please select who is receiving",
+      "samePersonError": "Payer and receiver cannot be the same person",
+      "dateRequired": "Date is required",
+      "recordFailed": "Failed to record settlement. Please try again."
+    }
+  },
+  "balance": {
+    "title": "Current Balance",
+    "owes": "owes",
+    "balanced": "Balanced",
+    "tahaOwesBurak": "Taha owes Burak",
+    "burakOwesTaha": "Burak owes Taha"
+  },
+  "history": {
+    "title": "Settlement History",
+    "noSettlements": "No settlements recorded",
+    "loadingSettlements": "Loading settlements...",
+    "paidTo": "paid to",
+    "on": "on"
+  }
+} 

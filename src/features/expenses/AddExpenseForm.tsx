@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Save, X, DollarSign, User, Calendar, Tag } from 'lucide-react';
 import { useCreateExpense } from '../../hooks';
+import { useCommonTranslation } from '../../hooks/useI18n';
 import { DEFAULT_CATEGORIES, UserId } from '../../types';
 import type { CreateExpenseRequest } from '../../types';
 
@@ -22,6 +23,7 @@ interface FormErrors {
 }
 
 const AddExpenseForm: React.FC = () => {
+  const { t } = useCommonTranslation();
   const [, setLocation] = useLocation();
   const createExpenseMutation = useCreateExpense();
 
@@ -44,35 +46,35 @@ const AddExpenseForm: React.FC = () => {
     // Amount validation
     const amount = parseFloat(formData.amount);
     if (!formData.amount.trim()) {
-      newErrors.amount = 'Amount is required';
+      newErrors.amount = t('pages.addExpense.validation.amountRequired');
     } else if (isNaN(amount) || amount <= 0) {
-      newErrors.amount = 'Amount must be a positive number';
+      newErrors.amount = t('pages.addExpense.validation.amountPositive');
     } else if (amount > 10000) {
-      newErrors.amount = 'Amount cannot exceed $10,000';
+      newErrors.amount = t('pages.addExpense.validation.amountLimit');
     }
 
     // Description validation
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = t('pages.addExpense.validation.descriptionRequired');
     } else if (formData.description.trim().length < 3) {
-      newErrors.description = 'Description must be at least 3 characters';
+      newErrors.description = t('pages.addExpense.validation.descriptionMinLength');
     } else if (formData.description.trim().length > 100) {
-      newErrors.description = 'Description cannot exceed 100 characters';
+      newErrors.description = t('pages.addExpense.validation.descriptionMaxLength');
     }
 
     // Category validation
     if (!formData.category) {
-      newErrors.category = 'Category is required';
+      newErrors.category = t('pages.addExpense.validation.categoryRequired');
     }
 
     // Paid by validation
     if (!formData.paidById) {
-      newErrors.paidById = 'Please select who paid for this expense';
+      newErrors.paidById = t('pages.addExpense.validation.paidByRequired');
     }
 
     // Date validation
     if (!formData.date) {
-      newErrors.date = 'Date is required';
+      newErrors.date = t('pages.addExpense.validation.dateRequired');
     } else {
       const selectedDate = new Date(formData.date);
       const today = new Date();
@@ -80,9 +82,9 @@ const AddExpenseForm: React.FC = () => {
       oneYearAgo.setFullYear(today.getFullYear() - 1);
 
       if (selectedDate > today) {
-        newErrors.date = 'Date cannot be in the future';
+        newErrors.date = t('pages.addExpense.validation.dateNotFuture');
       } else if (selectedDate < oneYearAgo) {
-        newErrors.date = 'Date cannot be more than a year ago';
+        newErrors.date = t('pages.addExpense.validation.dateNotTooOld');
       }
     }
 
@@ -148,7 +150,7 @@ const AddExpenseForm: React.FC = () => {
           <div>
             <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
               <DollarSign className="inline h-4 w-4 mr-1" />
-              Amount
+              {t('pages.addExpense.amount')}
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -175,12 +177,12 @@ const AddExpenseForm: React.FC = () => {
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
               <Tag className="inline h-4 w-4 mr-1" />
-              Description
+              {t('pages.addExpense.description')}
             </label>
             <input
               type="text"
               id="description"
-              placeholder="What was this expense for?"
+              placeholder={t('pages.addExpense.descriptionPlaceholder')}
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -192,7 +194,7 @@ const AddExpenseForm: React.FC = () => {
               {errors.description ? (
                 <p className="text-sm text-red-600">{errors.description}</p>
               ) : (
-                <p className="text-sm text-gray-500">Brief description of the expense</p>
+                <p className="text-sm text-gray-500">{t('pages.addExpense.descriptionHelper')}</p>
               )}
               <p className="text-sm text-gray-400">{formData.description.length}/100</p>
             </div>
@@ -201,23 +203,24 @@ const AddExpenseForm: React.FC = () => {
           {/* Category Field */}
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-              Category
+              <Tag className="inline h-4 w-4 mr-1" />
+              {t('pages.addExpense.category')}
             </label>
-            <select
-              id="category"
-              value={formData.category}
-              onChange={(e) => handleInputChange('category', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.category ? 'border-red-300' : 'border-gray-300'
-              }`}
-            >
-              <option value="">Select a category</option>
-              {DEFAULT_CATEGORIES.map((category) => (
-                <option key={category.name} value={category.name}>
-                  {category.icon} {category.name}
-                </option>
-              ))}
-            </select>
+                          <select
+                id="category"
+                value={formData.category}
+                onChange={(e) => handleInputChange('category', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.category ? 'border-red-300' : 'border-gray-300'
+                }`}
+              >
+                <option value="">{t('pages.addExpense.selectCategory')}</option>
+                {DEFAULT_CATEGORIES.map(category => (
+                  <option key={category.name} value={category.name}>
+                    {category.icon} {category.name}
+                  </option>
+                ))}
+              </select>
             {errors.category && (
               <p className="mt-1 text-sm text-red-600">{errors.category}</p>
             )}
@@ -227,7 +230,7 @@ const AddExpenseForm: React.FC = () => {
           <div>
             <label htmlFor="paidById" className="block text-sm font-medium text-gray-700 mb-2">
               <User className="inline h-4 w-4 mr-1" />
-              Paid By
+              {t('pages.addExpense.paidBy')}
             </label>
             <select
               id="paidById"
@@ -237,7 +240,7 @@ const AddExpenseForm: React.FC = () => {
                 errors.paidById ? 'border-red-300' : 'border-gray-300'
               }`}
             >
-              <option value="">Who paid for this?</option>
+              <option value="">{t('pages.addExpense.selectPayer')}</option>
               <option value={UserId.TAHA}>Taha</option>
               <option value={UserId.BURAK}>Burak</option>
             </select>
@@ -250,7 +253,7 @@ const AddExpenseForm: React.FC = () => {
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
               <Calendar className="inline h-4 w-4 mr-1" />
-              Date
+              {t('pages.addExpense.date')}
             </label>
             <input
               type="date"
@@ -265,47 +268,40 @@ const AddExpenseForm: React.FC = () => {
               <p className="mt-1 text-sm text-red-600">{errors.date}</p>
             )}
           </div>
-
-          {/* Mutation Error */}
-          {createExpenseMutation.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-600 text-sm">
-                Failed to create expense: {createExpenseMutation.error.message}
-              </p>
-            </div>
-          )}
-
-          {/* Form Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting || createExpenseMutation.isPending}
-              className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting || createExpenseMutation.isPending ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Expense
-                </>
-              )}
-            </button>
-            
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isSubmitting || createExpenseMutation.isPending}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <X className="h-4 w-4 mr-2 inline" />
-              Cancel
-            </button>
-          </div>
         </div>
+
+        {/* Form Actions */}
+        <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <X className="inline h-4 w-4 mr-2" />
+            {t('pages.addExpense.cancel')}
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Save className="inline h-4 w-4 mr-2" />
+            {isSubmitting ? t('buttons.saving') : t('pages.addExpense.saveExpense')}
+          </button>
+        </div>
+
+        {/* Error Display */}
+        {createExpenseMutation.error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">
+              {createExpenseMutation.error instanceof Error 
+                ? createExpenseMutation.error.message 
+                : 'Failed to create expense. Please try again.'}
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );

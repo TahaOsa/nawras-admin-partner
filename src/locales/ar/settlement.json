@@ -1,0 +1,40 @@
+{
+  "form": {
+    "title": "تسجيل التسوية",
+    "subtitle": "تتبع المدفوعات بين المستخدمين",
+    "amountLabel": "مبلغ التسوية",
+    "amountPlaceholder": "0.00",
+    "paidByLabel": "من يدفع",
+    "paidByPlaceholder": "اختر من يقوم بالدفع",
+    "paidToLabel": "من يستقبل", 
+    "paidToPlaceholder": "اختر من يستقبل الدفع",
+    "descriptionLabel": "الوصف (اختياري)",
+    "descriptionPlaceholder": "ما هو غرض هذه التسوية؟ (اختياري)",
+    "descriptionHelper": "وصف مختصر للتسوية",
+    "dateLabel": "تاريخ التسوية",
+    "recordSettlement": "تسجيل التسوية",
+    "errors": {
+      "amountRequired": "مبلغ التسوية مطلوب",
+      "amountInvalid": "يرجى إدخال مبلغ صحيح",
+      "paidByRequired": "يرجى اختيار من يدفع",
+      "paidToRequired": "يرجى اختيار من يستقبل",
+      "samePersonError": "الدافع والمستقبل لا يمكن أن يكونا نفس الشخص",
+      "dateRequired": "التاريخ مطلوب",
+      "recordFailed": "فشل في تسجيل التسوية. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "balance": {
+    "title": "الرصيد الحالي",
+    "owes": "مدين لـ",
+    "balanced": "متوازن",
+    "tahaOwesBurak": "طه مدين لبوراك",
+    "burakOwesTaha": "بوراك مدين لطه"
+  },
+  "history": {
+    "title": "تاريخ التسويات",
+    "noSettlements": "لا توجد تسويات مسجلة",
+    "loadingSettlements": "جاري تحميل التسويات...",
+    "paidTo": "دفع لـ",
+    "on": "في"
+  }
+} 

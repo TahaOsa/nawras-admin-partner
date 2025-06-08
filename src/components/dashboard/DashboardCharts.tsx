@@ -6,6 +6,7 @@ import { MonthlyTrendsChart } from '../charts/MonthlyTrendsChart';
 import { CategoryBreakdownChart } from '../charts/CategoryBreakdownChart';
 import { UserComparisonChart } from '../charts/UserComparisonChart';
 import { useDashboardAnalytics } from '../../hooks/useAnalyticsAPI';
+import { useCommonTranslation } from '../../hooks/useI18n';
 import type { AnalyticsFilters } from '../../types/analytics';
 
 interface DashboardChartsProps {
@@ -13,6 +14,8 @@ interface DashboardChartsProps {
 }
 
 export function DashboardCharts({ className = '' }: DashboardChartsProps) {
+  const { t } = useCommonTranslation();
+  
   // Analytics filters state
   const [analyticsFilters, setAnalyticsFilters] = useState<AnalyticsFilters>({
     period: 'all',
@@ -40,11 +43,11 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
 
   // Period filter options
   const periodOptions = [
-    { value: '1month', label: '1 Month' },
-    { value: '3months', label: '3 Months' },
-    { value: '6months', label: '6 Months' },
-    { value: '1year', label: '1 Year' },
-    { value: 'all', label: 'All Time' },
+    { value: '1month', label: t('charts.oneMonth') },
+    { value: '3months', label: t('charts.threeMonths') },
+    { value: '6months', label: t('charts.sixMonths') },
+    { value: '1year', label: t('charts.oneYear') },
+    { value: 'all', label: t('charts.allTime') },
   ];
 
   const updatePeriod = (period: string) => {
@@ -62,16 +65,16 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
             <TrendingUp className="h-6 w-6 text-red-600" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Failed to load analytics
+            {t('charts.failedToLoad')}
           </h3>
           <p className="text-sm text-gray-500 mb-4">
-            {error instanceof Error ? error.message : 'An error occurred while loading chart data'}
+            {error instanceof Error ? error.message : t('charts.errorLoading')}
           </p>
           <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
-            Try again
+            {t('charts.tryAgain')}
           </button>
         </div>
       </div>
@@ -83,9 +86,9 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
       {/* Charts Header with Period Filter */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Analytics Dashboard</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{t('charts.analyticsTitle')}</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Visual insights into your expense patterns
+            {t('charts.visualInsights')}
           </p>
         </div>
 
@@ -112,7 +115,7 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
         <div className="lg:col-span-2">
           {isLoading ? (
             <ChartLoadingSkeleton
-              title="Monthly Expense Trends"
+              title={t('charts.monthlyTrends')}
               icon={<TrendingUp className="h-5 w-5" />}
             />
           ) : (
@@ -129,7 +132,7 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
         <div>
           {isLoading ? (
             <ChartLoadingSkeleton
-              title="Expense Categories"
+              title={t('charts.expenseCategories')}
               icon={<PieChart className="h-5 w-5" />}
             />
           ) : (
@@ -146,7 +149,7 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
         <div>
           {isLoading ? (
             <ChartLoadingSkeleton
-              title="User Spending Comparison"
+              title={t('charts.userComparison')}
               icon={<BarChart3 className="h-5 w-5" />}
             />
           ) : (
@@ -167,25 +170,25 @@ export function DashboardCharts({ className = '' }: DashboardChartsProps) {
             <div className="text-2xl font-bold text-blue-900">
               {monthly.data.length}
             </div>
-            <div className="text-sm text-blue-600">Months Tracked</div>
+            <div className="text-sm text-blue-600">{t('charts.monthsTracked')}</div>
           </div>
           <div className="bg-green-50 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-green-900">
               {categories.data.length}
             </div>
-            <div className="text-sm text-green-600">Categories</div>
+            <div className="text-sm text-green-600">{t('charts.categories')}</div>
           </div>
           <div className="bg-purple-50 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-purple-900">
               {categories.data[0]?.category || 'None'}
             </div>
-            <div className="text-sm text-purple-600">Top Category</div>
+            <div className="text-sm text-purple-600">{t('charts.topCategory')}</div>
           </div>
           <div className="bg-orange-50 rounded-lg p-4 text-center">
             <div className="text-2xl font-bold text-orange-900">
               {users.data.length}
             </div>
-            <div className="text-sm text-orange-600">Periods</div>
+            <div className="text-sm text-orange-600">{t('charts.periods')}</div>
           </div>
         </div>
       )}

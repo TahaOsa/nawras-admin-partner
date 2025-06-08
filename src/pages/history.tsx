@@ -3,6 +3,7 @@ import { Calendar, Filter, Download, TrendingUp, TrendingDown, DollarSign, Users
 import { useExpenses, useSettlements } from '../hooks';
 import { formatCurrency } from '../lib';
 import { ExpenseFiltersComponent } from '../components';
+import { useCommonTranslation } from '../hooks/useI18n';
 import type { ExpenseFilters } from '../types';
 
 
@@ -21,6 +22,8 @@ interface HistoryItem {
 }
 
 const HistoryPage: React.FC = () => {
+  const { t } = useCommonTranslation();
+  
   // Enhanced filter state
   const [expenseFilters, setExpenseFilters] = useState<ExpenseFilters>({
     sortBy: 'date',
@@ -135,26 +138,26 @@ const HistoryPage: React.FC = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-4 sm:mb-0">
-            Transaction History
+            {t('pages.transactionHistory.title')}
           </h1>
 
           <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
             <Download className="h-4 w-4 mr-2" />
-            Export Data
+            {t('pages.transactionHistory.exportData')}
           </button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Total Expenses</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">{t('pages.transactionHistory.totalExpenses')}</h3>
                 <p className="text-2xl font-bold text-red-600">
                   {isLoading ? '...' : formatCurrency(summaryStats.totalExpenses)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {summaryStats.expenseCount} transaction{summaryStats.expenseCount !== 1 ? 's' : ''}
+                  {summaryStats.expenseCount} {summaryStats.expenseCount !== 1 ? t('pages.transactionHistory.transactions') : t('pages.transactionHistory.transaction')}
                 </p>
               </div>
               <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
@@ -166,12 +169,12 @@ const HistoryPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Total Settlements</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">{t('pages.transactionHistory.totalSettlements')}</h3>
                 <p className="text-2xl font-bold text-green-600">
                   {isLoading ? '...' : formatCurrency(summaryStats.totalSettlements)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {summaryStats.settlementCount} payment{summaryStats.settlementCount !== 1 ? 's' : ''}
+                  {summaryStats.settlementCount} {summaryStats.settlementCount !== 1 ? t('pages.transactionHistory.payments') : t('pages.transactionHistory.payment')}
                 </p>
               </div>
               <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -183,11 +186,11 @@ const HistoryPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Net Activity</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">{t('pages.transactionHistory.netActivity')}</h3>
                 <p className="text-2xl font-bold text-purple-600">
                   {isLoading ? '...' : formatCurrency(summaryStats.totalExpenses - summaryStats.totalSettlements)}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Outstanding balance</p>
+                <p className="text-xs text-gray-400 mt-1">{t('pages.transactionHistory.outstandingBalance')}</p>
               </div>
               <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-purple-600" />
@@ -198,11 +201,11 @@ const HistoryPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">Total Transactions</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">{t('pages.transactionHistory.totalTransactions')}</h3>
                 <p className="text-2xl font-bold text-blue-600">
                   {isLoading ? '...' : summaryStats.totalTransactions}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">All time</p>
+                <p className="text-xs text-gray-400 mt-1">{t('pages.transactionHistory.allTime')}</p>
               </div>
               <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
@@ -226,7 +229,7 @@ const HistoryPage: React.FC = () => {
         {/* Transaction Type Filter */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Show:</span>
+            <span className="text-sm font-medium text-gray-700">{t('pages.transactionHistory.show')}</span>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <select
@@ -234,9 +237,9 @@ const HistoryPage: React.FC = () => {
                 onChange={(e) => setFilterType(e.target.value as FilterType)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
-                <option value="all">All Transactions</option>
-                <option value="expense">Expenses Only</option>
-                <option value="settlement">Settlements Only</option>
+                <option value="all">{t('pages.transactionHistory.allTransactions')}</option>
+                <option value="expense">{t('pages.transactionHistory.expensesOnly')}</option>
+                <option value="settlement">{t('pages.transactionHistory.settlementsOnly')}</option>
               </select>
             </div>
           </div>
@@ -247,16 +250,16 @@ const HistoryPage: React.FC = () => {
           {isLoading ? (
             <div className="p-8 text-center">
               <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading transactions...</p>
+              <p className="text-gray-500">{t('pages.transactionHistory.loadingTransactions')}</p>
             </div>
           ) : filteredAndSortedItems.length === 0 ? (
             <div className="p-8 text-center">
               <div className="h-12 w-12 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
                 <Calendar className="h-6 w-6 text-gray-400" />
               </div>
-              <p className="text-gray-500 mb-2">No transactions found</p>
+              <p className="text-gray-500 mb-2">{t('pages.transactionHistory.noTransactions')}</p>
               <p className="text-gray-400 text-sm">
-                {expenseFilters.search ? 'Try adjusting your search or filters' : 'Start by adding some expenses or settlements'}
+                {expenseFilters.search ? t('pages.transactionHistory.adjustFilters') : t('pages.transactionHistory.startAdding')}
               </p>
             </div>
           ) : (

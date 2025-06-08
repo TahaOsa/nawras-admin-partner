@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useCommonTranslation } from '../../hooks/useI18n';
 import { DollarSign, TrendingUp, TrendingDown, Users, Calculator } from 'lucide-react';
 
 interface BalanceCardProps {
@@ -34,6 +35,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ title, amount, icon, color, s
 );
 
 export const BalanceSummary: React.FC = () => {
+  const { t } = useCommonTranslation();
   const { data: dashboardData, isLoading, error } = useDashboard();
 
   if (isLoading) {
@@ -55,12 +57,12 @@ export const BalanceSummary: React.FC = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="col-span-4 bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium">Dashboard API Error</h3>
+          <h3 className="text-red-800 font-medium">{t('balance.dashboardError')}</h3>
           <p className="text-red-600 text-sm mt-1">
-            Error loading dashboard data: {error?.message || 'Unknown error'}
+            {t('balance.errorLoading')}: {error?.message || 'Unknown error'}
           </p>
           <p className="text-red-600 text-xs mt-2">
-            Using old calculation method as fallback. Please refresh the page.
+            {t('balance.fallbackMethod')}
           </p>
         </div>
       </div>
@@ -110,42 +112,42 @@ export const BalanceSummary: React.FC = () => {
 
   const getBalanceDescription = () => {
     if (whoOwesWhom === 'balanced') {
-      return 'Perfect balance!';
+      return t('balance.perfectBalance');
     } else if (whoOwesWhom === 'burak_owes_taha') {
-      return 'Burak owes Taha';
+      return t('balance.burakOwesTaha');
     } else {
-      return 'Taha owes Burak';
+      return t('balance.tahaOwesBurak');
     }
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
       <BalanceCard
-        title="Taha's Account"
+        title={t('balance.tahaAccount')}
         amount={tahaData.totalPaid}
         icon={<DollarSign className="h-6 w-6 text-blue-600" />}
         color="text-blue-600"
-        subtitle={`Paid $${tahaData.totalPaid.toFixed(2)}, owes $${tahaData.totalOwes.toFixed(2)}`}
+        subtitle={`${t('balance.paid')} $${tahaData.totalPaid.toFixed(2)}, ${t('balance.owes')} $${tahaData.totalOwes.toFixed(2)}`}
       />
       
       <BalanceCard
-        title="Burak's Account"
+        title={t('balance.burakAccount')}
         amount={burakData.totalPaid}
         icon={<DollarSign className="h-6 w-6 text-green-600" />}
         color="text-green-600"
-        subtitle={`Paid $${burakData.totalPaid.toFixed(2)}, owes $${burakData.totalOwes.toFixed(2)}`}
+        subtitle={`${t('balance.paid')} $${burakData.totalPaid.toFixed(2)}, ${t('balance.owes')} $${burakData.totalOwes.toFixed(2)}`}
       />
       
       <BalanceCard
-        title="Partnership Total"
+        title={t('balance.partnershipTotal')}
         amount={dashboardData.totalExpenses}
         icon={<Users className="h-6 w-6 text-purple-600" />}
         color="text-purple-600"
-        subtitle={`Each partner owes $${(dashboardData.totalExpenses / 2).toFixed(2)}`}
+        subtitle={`${t('balance.eachPartnerOwes')} $${(dashboardData.totalExpenses / 2).toFixed(2)}`}
       />
       
       <BalanceCard
-        title="Current Balance"
+        title={t('balance.currentBalance')}
         amount={netBalance}
         icon={whoOwesWhom === 'balanced' ? 
           <Calculator className="h-6 w-6 text-green-600" /> :

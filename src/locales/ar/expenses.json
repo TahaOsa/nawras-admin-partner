@@ -1,0 +1,61 @@
+{
+  "form": {
+    "addExpense": "إضافة مصروف جديد",
+    "editExpense": "تعديل المصروف",
+    "amountLabel": "المبلغ",
+    "amountPlaceholder": "0.00",
+    "descriptionLabel": "الوصف",
+    "descriptionPlaceholder": "ما هو هذا المصروف؟",
+    "descriptionHelper": "وصف مختصر للمصروف",
+    "categoryLabel": "الفئة",
+    "categoryPlaceholder": "اختر فئة",
+    "paidByLabel": "دفع بواسطة",
+    "paidByPlaceholder": "من دفع هذا؟",
+    "dateLabel": "التاريخ",
+    "saveExpense": "حفظ المصروف",
+    "saveChanges": "حفظ التغييرات",
+    "deleteExpense": "حذف المصروف",
+    "errors": {
+      "amountRequired": "المبلغ مطلوب",
+      "amountInvalid": "يرجى إدخال مبلغ صحيح",
+      "descriptionRequired": "الوصف مطلوب",
+      "categoryRequired": "يرجى اختيار فئة",
+      "paidByRequired": "يرجى اختيار من دفع",
+      "dateRequired": "التاريخ مطلوب",
+      "updateFailed": "فشل في تحديث المصروف. يرجى المحاولة مرة أخرى.",
+      "deleteFailed": "فشل في حذف المصروف. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "categories": {
+    "food": "طعام",
+    "groceries": "بقالة", 
+    "transportation": "مواصلات",
+    "utilities": "مرافق",
+    "entertainment": "ترفيه",
+    "healthcare": "رعاية صحية",
+    "shopping": "تسوق",
+    "travel": "سفر",
+    "other": "أخرى"
+  },
+  "users": {
+    "taha": "طه",
+    "burak": "بوراك"
+  },
+  "list": {
+    "searchPlaceholder": "البحث في المصروفات...",
+    "noExpenses": "لا توجد مصروفات",
+    "loadingExpenses": "جاري تحميل المصروفات...",
+    "totalExpenses": "إجمالي المصروفات",
+    "filterBy": "تصفية بواسطة:",
+    "sortBy": "ترتيب بواسطة:",
+    "paidBy": "دفع بواسطة:",
+    "clearAll": "مسح الكل",
+    "filtersActive": "مرشح(ات) نشط"
+  },
+  "delete": {
+    "confirmTitle": "حذف المصروف",
+    "confirmMessage": "هل أنت متأكد من أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.",
+    "deleteButton": "حذف",
+    "cancelButton": "إلغاء"
+  }
+} 

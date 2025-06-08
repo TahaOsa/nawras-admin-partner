@@ -13,25 +13,28 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '../providers';
+import { useCommonTranslation } from '../hooks/useI18n';
+import LanguageSelector from './LanguageSelector';
 
 interface NavItem {
   path: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
 const navItems: NavItem[] = [
-  { path: '/', label: 'Dashboard', icon: Home },
-  { path: '/add-expense', label: 'Add Expense', icon: Plus },
-  { path: '/settlement', label: 'Settlement', icon: HandCoins },
-  { path: '/history', label: 'History', icon: History },
-  { path: '/reports', label: 'Reports', icon: BarChart3 },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/', labelKey: 'nav.dashboard', icon: Home },
+  { path: '/add-expense', labelKey: 'nav.addExpense', icon: Plus },
+  { path: '/settlement', labelKey: 'nav.settlement', icon: HandCoins },
+  { path: '/history', labelKey: 'nav.history', icon: History },
+  { path: '/reports', labelKey: 'nav.reports', icon: BarChart3 },
+  { path: '/settings', labelKey: 'nav.settings', icon: Settings },
 ];
 
 const Sidebar: React.FC = () => {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
+  const { t, isRTL } = useCommonTranslation();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
@@ -50,13 +53,14 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="hidden md:flex md:w-64 md:flex-col">
-      <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white border-r border-gray-200">
+    <div className={`hidden md:flex md:w-64 md:flex-col ${isRTL ? 'font-arabic' : ''}`}>
+      <div className={`flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white ${isRTL ? 'border-l' : 'border-r'} border-gray-200`}>
         {/* Logo/Brand */}
-        <div className="flex items-center flex-shrink-0 px-4 mb-8">
+        <div className="flex items-center justify-between flex-shrink-0 px-4 mb-8">
           <h1 className="text-xl font-bold text-gray-900">
             Nawras Admin
           </h1>
+          <LanguageSelector />
         </div>
 
         {/* Navigation */}
@@ -83,7 +87,7 @@ const Sidebar: React.FC = () => {
                         : 'text-gray-400 group-hover:text-gray-500'
                     )}
                   />
-                  {item.label}
+                  {t(item.labelKey)}
                 </a>
               </Link>
             );
@@ -129,13 +133,13 @@ const Sidebar: React.FC = () => {
             >
               {isSigningOut ? (
                 <>
-                  <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full mr-2"></div>
-                  Signing Out...
+                  <div className={`animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full ${isRTL ? 'ml-2' : 'mr-2'}`}></div>
+                  {t('buttons.signingIn')}
                 </>
               ) : (
                 <>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                  {t('buttons.signOut')}
                 </>
               )}
             </button>
