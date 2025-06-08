@@ -125,7 +125,28 @@
       "oneYear": "1 Year",
       "failedToLoad": "Failed to load reports",
       "tryAgain": "Try Again",
-      "errorMessage": "An error occurred while loading report data"
+      "errorMessage": "An error occurred while loading report data",
+      "summaryCards": {
+        "totalMonths": "Total Months",
+        "categories": "Categories",
+        "topCategory": "Top Category",
+        "balanceStatus": "Balance Status",
+        "balanced": "Balanced",
+        "tahaOwes": "Taha Owes",
+        "burakOwes": "Burak Owes",
+        "none": "None"
+      },
+      "charts": {
+        "monthlyExpenseTrends": "Monthly Expense Trends",
+        "categoryBreakdown": "Category Breakdown",
+        "userComparison": "User Comparison",
+        "balanceHistory": "Balance History",
+        "topCategories": "Top Categories",
+        "timePatterns": "Time Patterns",
+        "error": "Error",
+        "errorLoading": "Unable to render chart data. This might be due to invalid data format.",
+        "tryAgain": "Try Again"
+      }
     },
     "transactionHistory": {
       "title": "Transaction History",

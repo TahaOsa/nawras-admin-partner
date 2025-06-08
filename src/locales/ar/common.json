@@ -125,7 +125,28 @@
       "oneYear": "سنة واحدة",
       "failedToLoad": "فشل في تحميل التقارير",
       "tryAgain": "حاول مرة أخرى",
-      "errorMessage": "حدث خطأ أثناء تحميل بيانات التقرير"
+      "errorMessage": "حدث خطأ أثناء تحميل بيانات التقرير",
+      "summaryCards": {
+        "totalMonths": "إجمالي الأشهر",
+        "categories": "الفئات",
+        "topCategory": "الفئة الأولى",
+        "balanceStatus": "حالة الرصيد",
+        "balanced": "متوازن",
+        "tahaOwes": "طه يدين",
+        "burakOwes": "بوراك يدين",
+        "none": "لا يوجد"
+      },
+      "charts": {
+        "monthlyExpenseTrends": "اتجاهات المصروفات الشهرية",
+        "categoryBreakdown": "تصنيف الفئات",
+        "userComparison": "مقارنة المستخدمين",
+        "balanceHistory": "سجل الرصيد",
+        "topCategories": "أهم الفئات",
+        "timePatterns": "أنماط الوقت",
+        "error": "خطأ",
+        "errorLoading": "غير قادر على عرض بيانات الرسم البياني. قد يكون هذا بسبب تنسيق بيانات غير صحيح.",
+        "tryAgain": "حاول مرة أخرى"
+      }
     },
     "transactionHistory": {
       "title": "سجل المعاملات",

@@ -55,10 +55,10 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
           <div className="text-center">
             <div className="text-red-500 text-4xl mb-4">⚠️</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {this.props.chartName} Error
+              {this.props.chartName} {this.context?.t?.('pages.analyticsReports.charts.error') || 'Error'}
             </h3>
             <p className="text-gray-500 text-sm mb-4">
-              Unable to render chart data. This might be due to invalid data format.
+              {this.context?.t?.('pages.analyticsReports.charts.errorLoading') || 'Unable to render chart data. This might be due to invalid data format.'}
             </p>
             {this.state.error && (
               <p className="text-gray-400 text-xs mb-4">
@@ -69,7 +69,7 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
               onClick={this.handleReset}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Try Again
+              {this.context?.t?.('pages.analyticsReports.charts.tryAgain') || 'Try Again'}
             </button>
           </div>
         </div>
@@ -222,7 +222,7 @@ const ReportsPage: React.FC = () => {
                 <TrendingUp className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Months</p>
+                <p className="text-sm font-medium text-gray-500">{t('pages.analyticsReports.summaryCards.totalMonths')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {isLoading ? '...' : monthlyData.length}
                 </p>
@@ -236,7 +236,7 @@ const ReportsPage: React.FC = () => {
                 <PieChart className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Categories</p>
+                <p className="text-sm font-medium text-gray-500">{t('pages.analyticsReports.summaryCards.categories')}</p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {isLoading ? '...' : categoryData.length}
                 </p>
@@ -250,9 +250,9 @@ const ReportsPage: React.FC = () => {
                 <BarChart3 className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Top Category</p>
+                <p className="text-sm font-medium text-gray-500">{t('pages.analyticsReports.summaryCards.topCategory')}</p>
                 <p className="text-lg font-semibold text-gray-900">
-                  {isLoading ? '...' : categoryData[0]?.category || 'None'}
+                  {isLoading ? '...' : categoryData[0]?.category || t('pages.analyticsReports.summaryCards.none')}
                 </p>
               </div>
             </div>
@@ -264,12 +264,12 @@ const ReportsPage: React.FC = () => {
                 <DollarSign className="h-6 w-6 text-orange-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Balance Status</p>
+                <p className="text-sm font-medium text-gray-500">{t('pages.analyticsReports.summaryCards.balanceStatus')}</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {isLoading ? '...' : balanceData.length > 0 ?
-                    (balanceData[balanceData.length - 1].runningBalance > 0 ? 'Taha Owes' :
-                     balanceData[balanceData.length - 1].runningBalance < 0 ? 'Burak Owes' : 'Balanced')
-                    : 'Balanced'}
+                    (balanceData[balanceData.length - 1].runningBalance > 0 ? t('pages.analyticsReports.summaryCards.tahaOwes') :
+                     balanceData[balanceData.length - 1].runningBalance < 0 ? t('pages.analyticsReports.summaryCards.burakOwes') : t('pages.analyticsReports.summaryCards.balanced'))
+                    : t('pages.analyticsReports.summaryCards.balanced')}
                 </p>
               </div>
             </div>
@@ -281,9 +281,9 @@ const ReportsPage: React.FC = () => {
           {/* Row 1: Monthly Trends (Full Width) */}
           <div>
             {isLoading ? (
-              <ChartLoadingSkeleton title="Monthly Expense Trends" />
+              <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.monthlyExpenseTrends')} />
             ) : (
-              <ChartErrorBoundary chartName="Monthly Expense Trends">
+              <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.monthlyExpenseTrends')}>
                 <MonthlyTrendsChart
                   data={monthlyData}
                   height={400}
@@ -298,9 +298,9 @@ const ReportsPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               {isLoading ? (
-                <ChartLoadingSkeleton title="Category Breakdown" />
+                <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.categoryBreakdown')} />
               ) : (
-                <ChartErrorBoundary chartName="Category Breakdown">
+                <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.categoryBreakdown')}>
                   <CategoryBreakdownChart
                     data={categoryData}
                     height={450}
@@ -313,9 +313,9 @@ const ReportsPage: React.FC = () => {
 
             <div>
               {isLoading ? (
-                <ChartLoadingSkeleton title="User Comparison" />
+                <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.userComparison')} />
               ) : (
-                <ChartErrorBoundary chartName="User Comparison">
+                <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.userComparison')}>
                   <UserComparisonChart
                     data={userData}
                     height={450}
@@ -330,9 +330,9 @@ const ReportsPage: React.FC = () => {
           {/* Row 3: Balance History (Full Width) */}
           <div>
             {isLoading ? (
-              <ChartLoadingSkeleton title="Balance History" />
+              <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.balanceHistory')} />
             ) : (
-              <ChartErrorBoundary chartName="Balance History">
+              <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.balanceHistory')}>
                 <BalanceHistoryChart
                   data={balanceData}
                   height={400}
@@ -347,9 +347,9 @@ const ReportsPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               {isLoading ? (
-                <ChartLoadingSkeleton title="Top Categories" />
+                <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.topCategories')} />
               ) : (
-                <ChartErrorBoundary chartName="Top Categories">
+                <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.topCategories')}>
                   <TopCategoriesChart
                     data={categoryData}
                     height={450}
@@ -363,9 +363,9 @@ const ReportsPage: React.FC = () => {
 
             <div>
               {isLoading ? (
-                <ChartLoadingSkeleton title="Time Patterns" />
+                <ChartLoadingSkeleton title={t('pages.analyticsReports.charts.timePatterns')} />
               ) : (
-                <ChartErrorBoundary chartName="Time Patterns">
+                <ChartErrorBoundary chartName={t('pages.analyticsReports.charts.timePatterns')}>
                   <TimePatternChart
                     data={timePatternData}
                     height={450}
